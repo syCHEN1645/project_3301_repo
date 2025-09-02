@@ -8,19 +8,19 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from plots import RUN_PATH, Plotter
-from gauge_detection.detection_inference import detection_gauge_face
-from ocr.ocr_inference import ocr, ocr_rotations, ocr_single_rotation, ocr_warp
-from key_point_detection.key_point_inference import KeyPointInference, detect_key_points
-from geometry.ellipse import fit_ellipse, cart_to_pol, get_line_ellipse_point, \
+from .plots import RUN_PATH, Plotter
+from .gauge_detection.detection_inference import detection_gauge_face
+from .ocr.ocr_inference import ocr, ocr_rotations, ocr_single_rotation, ocr_warp
+from .key_point_detection.key_point_inference import KeyPointInference, detect_key_points
+from .geometry.ellipse import fit_ellipse, cart_to_pol, get_line_ellipse_point, \
     get_point_from_angle, get_polar_angle, get_theta_middle, get_ellipse_error
-from angle_reading_fit.angle_converter import AngleConverter
-from angle_reading_fit.line_fit import line_fit, line_fit_ransac
-from segmentation.segmenation_inference import get_start_end_line, segment_gauge_needle, \
+from .angle_reading_fit.angle_converter import AngleConverter
+from .angle_reading_fit.line_fit import line_fit, line_fit_ransac
+from .segmentation.segmenation_inference import get_start_end_line, segment_gauge_needle, \
     get_fitted_line, cut_off_line
 # pylint: disable=no-name-in-module
 # pylint: disable=no-member
-from evaluation import constants
+from .evaluation import constants
 
 import sys
 from pathlib import Path
@@ -110,7 +110,7 @@ def rescale_ellipse_resize(ellipse_params, original_resolution,
 
 def process_image(image, detection_model_path, key_point_model_path,
                   segmentation_model_path, run_path, debug, eval_mode,
-                  start_marking, end_marking, image_is_raw=False):
+                  start_marking, end_marking, unit, image_is_raw=False):
 
     result = []
     errors = {}
@@ -458,8 +458,6 @@ def process_image(image, detection_model_path, key_point_model_path,
     end_point_xy = [end_point[0][0], end_point[0][1]]
     theta_start = get_polar_angle(start_point_xy, ellipse_params)
     theta_end = get_polar_angle(end_point_xy, ellipse_params)
-    unit = "unit"
-
 
     # ------------------Project Needle to ellipse-------------------------
 

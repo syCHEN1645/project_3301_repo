@@ -12,20 +12,20 @@ from pathlib import Path
 
 # Now import works
 from analog_gauge_reader.pipeline_v3 import process_image
-from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODEL_PATH, RESULT_PATH
+from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODEL_PATH, RESULT_PATH, CONFIG_CALIBRATION_PATH
 
 # params:
-# imageName is the name of image without .jpg
+# imageName is the name of image without .jpg (name = f"{index}_{timestamp}")
 # imagePath is the absolute path of the original image
 # returns:
 # data object converted from .json file
-def readImage(imageName, rgd_img, start_marking, end_marking):
-    runModel(rgd_img, imageName, start_marking, end_marking)
+def readImage(imageName, rgd_img):
+    runModel(imageName, rgd_img)
     data = retrieveResult(imageName)
     return data
 
 
-def runModel(rgd_img, imageName, start_marking, end_marking, debug=True, eval_mode=True):
+def runModel(imageName, rgd_img, debug=True, eval_mode=True):
     """
     Run the gauge reading model directly on an OpenCV frame (NumPy array).
 
@@ -49,6 +49,15 @@ def runModel(rgd_img, imageName, start_marking, end_marking, debug=True, eval_mo
     # Convert OpenCV BGR to RGB, as expected by process_image()
     #image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+    index = (int)(imageName[0])
+    with open(CONFIG_CALIBRATION_PATH) as f:
+        data = json.load(f)
+        for obj in data:
+            if obj["index"] == index:
+                start_marking = obj["start_marking"]
+                end_marking = obj["end_marking"]
+                unit = obj["unit"]
+                break
     # Run the full gauge-reading pipeline
     result = process_image(
         image=rgd_img,
@@ -60,9 +69,9 @@ def runModel(rgd_img, imageName, start_marking, end_marking, debug=True, eval_mo
         eval_mode=eval_mode,
         start_marking=start_marking,
         end_marking=end_marking,
+        unit=unit,
         image_is_raw=False  # It's a NumPy array already
     )
-
     return result  # dict with {'value': ..., 'unit': ...}
 
 # def runModel_original(imagePath):

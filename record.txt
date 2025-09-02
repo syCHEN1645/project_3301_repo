@@ -1,0 +1,6 @@
+aug20test,sensor_name=wh00-pressure unit=0.0035551920850687146 1756789520
+aug20test,sensor_name=wh00-pressure unit=-0.8111889028360888 1756789533
+aug20test,sensor_name=wh00-pressure unit=-0.0431291121477948 1756789548
+aug20test,sensor_name=wh00-pressure unit=-0.4701142703937379 1756789564
+aug20test,sensor_name=wh00-pressure bar=0.05218479687746491 1756818150
+aug20test,sensor_name=wh00-pressure bar=0.03779030088600854 1756818164
