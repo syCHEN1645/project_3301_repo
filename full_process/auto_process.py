@@ -141,27 +141,7 @@ def main():
         print("Stop upon keyboard interrupt")
     except Exception as e:
         print(f"Unexpected error: {e}")
-    
-    # # set time interval length
-    # interval = 20
-    # if (len(sys.argv) == 2):
-    #     interval = int(sys.argv[1])
-
-    # try:
-    #     activeCams = scanActiveCameras()
-    #     # run active cameras in parallel
-    #     # each camera submits a process
-    #     # jetson orin has 12? cores
-    #     fullProcess(activeCams[0], interval)
-    #     # with ProcessPoolExecutor() as executor:
-    #     #     futures = [executor.submit(fullProcess, index, interval) for index in activeCams]
-    #     #     for future in futures:
-    #     #         future.result()
-
-    # except KeyboardInterrupt:
-    #     print("Stop upon keyboard interrupt")
-    #     exit()
-
+        
 
 if __name__=="__main__":
     main()

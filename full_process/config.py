@@ -7,7 +7,7 @@ INFLUX_USERNAME = "digiwell"
 INFLUX_BUCKET = "bucket-0"
 INFLUX_ORG = "is307"
 
-
+CONFIG_CALIBRATION_PATH = "config_calibration.json"
 BASE_MODEL_PATH = os.path.expanduser("~/Desktop/project_3301_240825/analog_gauge_reader")
 
 DETECTION_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "models", "gauge_detection_model.pt")
