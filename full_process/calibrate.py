@@ -10,20 +10,20 @@ def main():
     # possibly show picture from cameras to confirm
 
     # todo: get a proper list of cam names
-    camera_name_list = ["cam 0"]
+    camera_index_list = [0]
 
     # todo: loop this for each cam
-    name = camera_name_list[0]
-    print(f"Key in start point value for {name}: ")
+    index = camera_index_list[0]
+    print(f"Key in start point value for camera {index}: ")
     start_marking = (float)(input())
-    print(f"Key in end point value for {name}: ")
+    print(f"Key in end point value for camera {index}: ")
     end_marking = (float)(input())
-    print(f"Key in unit for {name}: ")
+    print(f"Key in unit for camera {index}: ")
     unit = (str)(input())
 
     config = [
         {
-        "name": name,
+        "index": index,
         "start_marking": start_marking,
         "end_marking": end_marking,
         "unit": unit
