@@ -18,7 +18,7 @@ SEGMENTATION_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "models", "best.pt")
 CAPTURE_INTERVAL = 10  # seconds
 
 # Result path
-RESULT_PATH = os.path.expanduser("~/Desktop/project_3301_repo/camera_link/processed_results")
+RESULT_PATH = os.path.expanduser("~/Desktop/project_3301_repo/processed_results")
 
 # Verify model files exist
 def verify_model_files():
