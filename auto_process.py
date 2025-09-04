@@ -8,12 +8,32 @@ import time
 import sys
 import os
 import cv2
+from datetime import datetime
 
 from pathlib import Path
 from config import verify_model_files, CAPTURE_INTERVAL
 
 # Add project root to sys.path for absolute imports
 # sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+def redirect_camera_output(cam_index):
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"logs/camera_output_{cam_index}_{now}.log"
+    os.makedirs("logs", exist_ok=True)
+    log_file = open(log_filename, "a")
+    sys.stdout = log_file
+    sys.stderr = log_file
+    print(f"[{datetime.now()}] Logging started for camera {cam_index}")
+
+def redirect_subprocess_output(cam_index):
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"logs/subprocess_output_{cam_index}_post_{now}.log"
+    os.makedirs("logs", exist_ok=True)
+    log_file = open(log_filename, "a")
+    sys.stdout = log_file
+    sys.stderr = log_file
+    print(f"[{datetime.now()}] Logging started for postCapture of camera {cam_index}")
+
 
 def scanActiveCameras():
     print("Scanning for active cameras")
@@ -51,7 +71,9 @@ def isActiveCamera(name):
     return -1
 
 
-def postCapture(name, rgd_img):
+def postCapture(name, rgd_img, index):
+    redirect_subprocess_output(index)
+
     try:
         data = readImage(name, rgd_img)
         if data is None:
@@ -80,6 +102,8 @@ def postCapture(name, rgd_img):
 
 
 def fullProcess(index, interval):
+    redirect_camera_output(index)
+    
     print(f"Start running full process for camera {index}")
     # capture must be declared within the process
     capture = cv2.VideoCapture(index)
@@ -91,7 +115,7 @@ def fullProcess(index, interval):
         while True:
             name, frame = captureImage(capture, index)
             if frame is not None:
-                p = Process(target=postCapture, args=(name, frame))
+                p = Process(target=postCapture, args=(name, frame, index))
                 p.daemon = True  # Dies when main process dies
                 p.start()
                 # Note: Not joining process to avoid blocking
