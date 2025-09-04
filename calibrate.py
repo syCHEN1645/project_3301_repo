@@ -10,7 +10,7 @@ def main():
     # possibly show picture from cameras to confirm
 
     # todo: get a proper list of cam names
-    camera_index_list = [0]
+    camera_index_list = [1]
 
     # todo: loop this for each cam
     index = camera_index_list[0]
