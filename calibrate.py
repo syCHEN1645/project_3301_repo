@@ -26,6 +26,7 @@ def main():
         if ret:
             try:
                 cv2.imshow(f"{index}", frame)
+                cv2.waitKey(1000)
             except Exception:
                 print("Failed to show image.")
 
@@ -37,6 +38,11 @@ def main():
         end_marking = (float)(input())
         print(f"Key in unit for camera {index}: ")
         unit = (str)(input())
+        try:
+            cv2.destroyWindow(f"{index}")
+            print("Closing image")
+        except Exception:
+            print("Image already closed")
 
         config.append(
             {
