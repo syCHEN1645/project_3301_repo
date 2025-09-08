@@ -1,8 +1,9 @@
 import json
 import os
 import sys
+import cv2
 
-from config import CONFIG_CALIBRATION_PATH
+from config import CONFIG_CALIBRATION_PATH 
 from auto_process import scanActiveCameras
 
 def main():
@@ -10,11 +11,26 @@ def main():
     # todo: get a proper list of cam names
     camera_index_list = scanActiveCameras()
     # clibrate each camera
-    # possibly show picture from cameras to confirm
-
+    # show picture from cameras to confirm
     config = []
     # todo: loop this for each cam
     for index in camera_index_list:
+        print("Taking a photo and displaying in imageviewer...")
+        # todo: open and display photo
+        cam = cv2.VideoCapture(index)
+        if not cam.isOpened():
+            print("Camera error, please re-run the programme")
+            return
+
+        ret, frame = cam.read()
+        if ret:
+            try:
+                cv2.imshow(f"{index}", frame)
+            except Exception:
+                print("Failed to show image.")
+
+        cam.release()
+
         print(f"Key in start point value for camera {index}: ")
         start_marking = (float)(input())
         print(f"Key in end point value for camera {index}: ")
