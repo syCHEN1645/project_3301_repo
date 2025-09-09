@@ -7,8 +7,8 @@ INFLUX_USERNAME = "digiwell"
 INFLUX_BUCKET = "bucket-0"
 INFLUX_ORG = "is307"
 
-
-BASE_MODEL_PATH = os.path.expanduser("~/Desktop/project_3301_240825/analog_gauge_reader")
+CONFIG_CALIBRATION_PATH = "config_calibration.json"
+BASE_MODEL_PATH = os.path.expanduser("~/Desktop/project_3301_repo/analog_gauge_reader")
 
 DETECTION_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "models", "gauge_detection_model.pt")
 KEY_POINT_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "models", "key_point_model.pt") 
@@ -18,7 +18,7 @@ SEGMENTATION_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "models", "best.pt")
 CAPTURE_INTERVAL = 10  # seconds
 
 # Result path
-RESULT_PATH = os.path.expanduser("~/Desktop/project_3301_240825/camera_link/processed_results")
+RESULT_PATH = os.path.expanduser("~/Desktop/project_3301_repo/processed_results")
 
 # Verify model files exist
 def verify_model_files():

@@ -1,1 +1,9 @@
+__pycache__/
+captured_images/
+record.txt
+processed_results/
+logs/
+config_calibration.json
+captured_images_archive/
+logs_archive/
 config.py

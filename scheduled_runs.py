@@ -8,13 +8,33 @@ import time
 import sys
 import os
 import cv2
+from datetime import datetime
 
-import sys
 from pathlib import Path
 from config import verify_model_files, CAPTURE_INTERVAL
+from multiprocessing import Pool
 
 # Add project root to sys.path for absolute imports
 # sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+def redirect_camera_output(cam_index):
+    #now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"logs/camera_output_{cam_index}.log"
+    os.makedirs("logs", exist_ok=True)
+    log_file = open(log_filename, "a")
+    sys.stdout = log_file
+    sys.stderr = log_file
+    print(f"[{datetime.now()}] Logging started for camera {cam_index}")
+
+def redirect_subprocess_output(cam_index):
+    #now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"logs/subprocess_output_{cam_index}.log"
+    os.makedirs("logs", exist_ok=True)
+    log_file = open(log_filename, "a")
+    sys.stdout = log_file
+    sys.stderr = log_file
+    print(f"[{datetime.now()}] Logging started for postCapture of camera {cam_index}")
+
 
 def scanActiveCameras():
     print("Scanning for active cameras")
@@ -52,9 +72,11 @@ def isActiveCamera(name):
     return -1
 
 
-def postCapture(name, rgd_img, start_marking, end_marking):
+def postCapture(name, rgd_img, index):
+    #redirect_subprocess_output(index)
+
     try:
-        data = readImage(name, rgd_img, start_marking, end_marking)
+        data = readImage(name, rgd_img)
         if data is None:
             print("No data returned from image processing")
             return
@@ -80,7 +102,9 @@ def postCapture(name, rgd_img, start_marking, end_marking):
     #    deleteData(name, path)
 
 
-def fullProcess(index, interval, start_marking, end_marking):
+def fullProcess(index):
+    #redirect_camera_output(index)
+    
     print(f"Start running full process for camera {index}")
     # capture must be declared within the process
     capture = cv2.VideoCapture(index)
@@ -88,33 +112,34 @@ def fullProcess(index, interval, start_marking, end_marking):
         print(f"Failed to open camera {index}")
         return
 
+    capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+    capture.set(cv2.CAP_PROP_FPS, 5)
+
     try:
         while True:
+            start = time.time()
             name, frame = captureImage(capture, index)
             if frame is not None:
-                p = Process(target=postCapture, args=(name, frame, start_marking, end_marking))
-                p.daemon = True  # Dies when main process dies
-                p.start()
-                # Note: Not joining process to avoid blocking
-                
-            time.sleep(interval)
-            print(f"Break for {interval} seconds ...")
-            
+                postCapture(name, frame, index)
+                print(f"[{datetime.now()}] Camera {index}: Data processed successfully")
+
+            else:
+                print(f"[{datetime.now()}] Camera {index}: Failed to capture image")
+                time.sleep(2)  # <- Give the USB bus and camera time to recover
+                continue
+
+
+            elapsed = time.time() - start
+            #sleep_time = max(0, 40 - elapsed)
+            #print(f"[{datetime.now()}] Camera {index}: Sleeping {sleep_time:.1f}s")
+            time.sleep(30)
+
     except KeyboardInterrupt:
         print(f"Stopping camera {index} processing")
     finally:
         capture.release()
-    # while True:
-    #     name, rgd_img = captureImage(capture, index)
-    #     #ret, frame = capture.read()
-    #     #rgb_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    #     #pil_img = Image.fromarray(rgb_img)
-    #     postCapture(name, rgd_img)
-    #     # p = Process(target=postCapture, args=(name, path))
-    #     # p.start()
-    #     # todo: process p is not joined, may become zombie
-    #     time.sleep(interval)
-    #     print("Break for 10 seconds ...")
 
 
 def main():
@@ -123,44 +148,42 @@ def main():
         return
         
     interval = CAPTURE_INTERVAL
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 2:
         interval = int(sys.argv[1])
-        start_marking = float(sys.argv[2])
-        end_marking = float(sys.argv[3])
         
     try:
         activeCams = scanActiveCameras()
         if not activeCams:
             print("No active cameras found")
             return
-            
+        
+        processes = []
+        for index in activeCams:
+            p = Process(target=fullProcess, args=(index,))
+            p.start()
+            processes.append(p)
+
+        try:
+            for p in processes:
+                p.join()
+        except KeyboardInterrupt:
+            print("Main process interrupted. Terminating cameras...")
+            for p in processes:
+                p.terminate()
+
+
+        # print(activeCams)
+        # with Pool(processes=len(activeCams)) as pool:
+        #     pool.map(fullProcess, activeCams)
+
+
         # For now, just run the first camera (you can extend this for multiple cameras)
-        fullProcess(activeCams[0], interval, start_marking, end_marking)
+        #fullProcess(activeCams[0], interval)
         
     except KeyboardInterrupt:
         print("Stop upon keyboard interrupt")
     except Exception as e:
         print(f"Unexpected error: {e}")
-    
-    # # set time interval length
-    # interval = 20
-    # if (len(sys.argv) == 2):
-    #     interval = int(sys.argv[1])
-
-    # try:
-    #     activeCams = scanActiveCameras()
-    #     # run active cameras in parallel
-    #     # each camera submits a process
-    #     # jetson orin has 12? cores
-    #     fullProcess(activeCams[0], interval)
-    #     # with ProcessPoolExecutor() as executor:
-    #     #     futures = [executor.submit(fullProcess, index, interval) for index in activeCams]
-    #     #     for future in futures:
-    #     #         future.result()
-
-    # except KeyboardInterrupt:
-    #     print("Stop upon keyboard interrupt")
-    #     exit()
 
 
 if __name__=="__main__":
