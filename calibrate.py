@@ -94,10 +94,10 @@ def main():
         except Exception:
             print("Image already closed")
 
-        user_input["index"] = index
-        config.append(user_input)
+        user_input_full_dict = {index : user_input}
+        config.append(user_input_full_dict)
 
-    config = sorted(config, key=lambda x: x["index"])
+    config = sorted(config)
 
     # write all info (from all cameras) into config file
     with open(CONFIG_CALIBRATION_PATH, "w") as f:
