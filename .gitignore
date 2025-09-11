@@ -7,3 +7,5 @@ config_calibration.json
 captured_images_archive/
 logs_archive/
 config.py
+*.jpg
+*.json

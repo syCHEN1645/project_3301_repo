@@ -32,7 +32,7 @@ def main():
     camera_index_list = scanActiveCameras()
     # calibrate each camera
     # show picture from cameras to confirm
-    config = []
+    config = {}
     # todo: loop this for each cam
     for index in camera_index_list:
         print("Taking a photo and displaying in imageviewer...")
@@ -95,9 +95,9 @@ def main():
             print("Image already closed")
 
         user_input_full_dict = {index : user_input}
-        config.append(user_input_full_dict)
+        config.update(user_input_full_dict)
 
-    config = sorted(config)
+    config = dict(sorted(config.items()))
 
     # write all info (from all cameras) into config file
     with open(CONFIG_CALIBRATION_PATH, "w") as f:

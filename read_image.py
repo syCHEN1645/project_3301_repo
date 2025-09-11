@@ -20,9 +20,9 @@ from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODE
 # returns:
 # data object converted from .json file
 def readImage(imageName, rgd_img):
-    runModel(imageName, rgd_img)
-    data = retrieveResult(imageName)
-    return data
+    data = runModel(imageName, rgd_img)
+    # data = retrieveResult(imageName)
+    return data["value"]
 
 
 def runModel(imageName, rgd_img, debug=True, eval_mode=True):

@@ -1,39 +1,36 @@
 from capture_image import captureImage
 from read_image import readImage
-from send_data import sendData, deleteData
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import Process, Queue
-from PIL import Image
+from send_data import sendData
+from multiprocessing import Process
 import time
 import sys
 import os
 import cv2
 from datetime import datetime
-
-from pathlib import Path
+import json
 from config import verify_model_files, CAPTURE_INTERVAL
-from multiprocessing import Pool
+
 
 # Add project root to sys.path for absolute imports
 # sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-def redirect_camera_output(cam_index):
+def redirect_camera_output(cam_index, camera_name):
     #now = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_filename = f"logs/camera_output_{cam_index}.log"
     os.makedirs("logs", exist_ok=True)
     log_file = open(log_filename, "a")
     sys.stdout = log_file
     sys.stderr = log_file
-    print(f"[{datetime.now()}] Logging started for camera {cam_index}")
+    print(f"[{datetime.now()}] Logging started for camera {cam_index}_{camera_name}")
 
-def redirect_subprocess_output(cam_index):
+def redirect_subprocess_output(cam_index, camera_name):
     #now = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_filename = f"logs/subprocess_output_{cam_index}.log"
     os.makedirs("logs", exist_ok=True)
     log_file = open(log_filename, "a")
     sys.stdout = log_file
     sys.stderr = log_file
-    print(f"[{datetime.now()}] Logging started for postCapture of camera {cam_index}")
+    print(f"[{datetime.now()}] Logging started for postCapture of camera {cam_index}_{camera_name}")
 
 
 def scanActiveCameras():
@@ -72,11 +69,13 @@ def isActiveCamera(name):
     return -1
 
 
-def postCapture(name, rgd_img, index):
-    #redirect_subprocess_output(index)
+def postCapture(name, rgd_img, camera_index, camera_details):
+    #redirect_subprocess_output(camera_index, {camera_details['camera_name']})
 
     try:
+        print("reading image")
         data = readImage(name, rgd_img)
+        print(data)
         if data is None:
             print("No data returned from image processing")
             return
@@ -102,42 +101,46 @@ def postCapture(name, rgd_img, index):
     #    deleteData(name, path)
 
 
-def fullProcess(index):
-    #redirect_camera_output(index)
+def fullProcess(camera_index, camera_details, interval):
+    #redirect_camera_output(camera_index, {camera_details['camera_name']})
+
+    # camera_details in a dict with the format {camera_index : {configuration key value pairs}}
+    # next(iter(camera_details)) gives the camera index
+    # 
     
-    print(f"Start running full process for camera {index}")
+    print(f"Start running full process for camera {camera_index}")
     # capture must be declared within the process
-    capture = cv2.VideoCapture(index)
+    capture = cv2.VideoCapture(camera_index)
     if not capture.isOpened():
-        print(f"Failed to open camera {index}")
+        print(f"Failed to open camera {camera_index}")
         return
 
     capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 680)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     capture.set(cv2.CAP_PROP_FPS, 5)
 
     try:
         while True:
             start = time.time()
-            name, frame = captureImage(capture, index)
+            name, frame = captureImage(capture, camera_index)
             if frame is not None:
-                postCapture(name, frame, index)
-                print(f"[{datetime.now()}] Camera {index}: Data processed successfully")
+                postCapture(name, frame, camera_index, camera_details)
+                print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Data processed successfully")
 
             else:
-                print(f"[{datetime.now()}] Camera {index}: Failed to capture image")
+                print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Failed to capture image")
                 time.sleep(2)  # <- Give the USB bus and camera time to recover
                 continue
 
 
             elapsed = time.time() - start
-            #sleep_time = max(0, 40 - elapsed)
-            #print(f"[{datetime.now()}] Camera {index}: Sleeping {sleep_time:.1f}s")
+            sleep_time = max(0, interval - elapsed)
+            print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Sleeping {sleep_time:.1f}s")
             time.sleep(30)
 
     except KeyboardInterrupt:
-        print(f"Stopping camera {index} processing")
+        print(f"Stopping camera {camera_index}_{camera_details['camera_name']} processing")
     finally:
         capture.release()
 
@@ -150,7 +153,16 @@ def main():
     interval = CAPTURE_INTERVAL
     if len(sys.argv) == 2:
         interval = int(sys.argv[1])
-        
+
+    camera_dict = {}
+    with open("config_calibration.json", "r") as f:
+        camera_dict_raw = json.load(f)
+        camera_dict = {int(k) : v for k, v in camera_dict_raw.items()}
+    
+    if not camera_dict:
+        print("Error loading the camera configuration file.")
+        exit(1)
+
     try:
         activeCams = scanActiveCameras()
         if not activeCams:
@@ -158,8 +170,8 @@ def main():
             return
         
         processes = []
-        for index in activeCams:
-            p = Process(target=fullProcess, args=(index,))
+        for camera_index in activeCams:
+            p = Process(target=fullProcess, args=(camera_index, camera_dict[camera_index], interval))
             p.start()
             processes.append(p)
 
