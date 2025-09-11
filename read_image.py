@@ -19,13 +19,13 @@ from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODE
 # imagePath is the absolute path of the original image
 # returns:
 # data object converted from .json file
-def readImage(imageName, rgd_img):
-    data = runModel(imageName, rgd_img)
+def readImage(imageName, rgd_img, camera_index, camera_details):
+    data = runModel(imageName, rgd_img, camera_index, camera_details)
     # data = retrieveResult(imageName)
-    return data["value"]
+    return data
 
 
-def runModel(imageName, rgd_img, debug=True, eval_mode=True):
+def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_mode=True):
     """
     Run the gauge reading model directly on an OpenCV frame (NumPy array).
 
@@ -49,15 +49,19 @@ def runModel(imageName, rgd_img, debug=True, eval_mode=True):
     # Convert OpenCV BGR to RGB, as expected by process_image()
     #image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    index = (int)(imageName[0])
-    with open(CONFIG_CALIBRATION_PATH) as f:
-        data = json.load(f)
-        for obj in data:
-            if obj["index"] == index:
-                start_marking = obj["start_marking"]
-                end_marking = obj["end_marking"]
-                unit = obj["unit"]
-                break
+
+    start_marking = camera_details["start_marking"]
+    end_marking = camera_details["end_marking"]
+    unit = camera_details["unit"]
+    # index = (int)(imageName[0])
+    # with open(CONFIG_CALIBRATION_PATH) as f:
+    #     data = json.load(f)
+    #     for obj in data:
+    #         if obj["index"] == index:
+    #             start_marking = obj["start_marking"]
+    #             end_marking = obj["end_marking"]
+    #             unit = obj["unit"]
+    #             break
     # Run the full gauge-reading pipeline
     result = process_image(
         image=rgd_img,

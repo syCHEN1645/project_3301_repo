@@ -6,7 +6,7 @@ import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 from config import INFLUX_ORG, INFLUX_TOKEN, INFLUX_URL, INFLUX_BUCKET
 
-def sendData(data):
+def sendData(data, camera_index, camera_details):
     # influx client
     client = influxdb_client.InfluxDBClient(
             url=INFLUX_URL,
@@ -21,7 +21,7 @@ def sendData(data):
         print(f"Reading failed, there is no valid data to send")
         return 2
 
-    formatted_data = influxdb_client.Point("aug20test").tag("sensor_name", "wh00-pressure").field(data[0]["unit"], data[0]["reading"]).time(datetime.datetime.utcnow(), write_precision='s')
+    formatted_data = influxdb_client.Point("aug20test").tag(camera_details['wellhead_name'], camera_details['gauge_name'], camera_details['camera_name']).field(data[0]["unit"], data[0]["reading"]).time(datetime.datetime.utcnow(), write_precision='s')
 
     # send data to database process
     print(f"Sending data {data}")

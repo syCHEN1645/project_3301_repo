@@ -1,5 +1,5 @@
 from capture_image import captureImage
-from read_image import readImage
+from read_image import readImage, runModel
 from send_data import sendData
 from multiprocessing import Process
 import time
@@ -74,7 +74,8 @@ def postCapture(name, rgd_img, camera_index, camera_details):
 
     try:
         print("reading image")
-        data = readImage(name, rgd_img)
+        # data = readImage(name, rgd_img, camera_index, camera_details)
+        data = runModel(name, rgd_img, camera_index, camera_details)
         print(data)
         if data is None:
             print("No data returned from image processing")
