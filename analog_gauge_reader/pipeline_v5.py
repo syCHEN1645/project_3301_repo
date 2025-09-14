@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from plots import RUN_PATH, Plotter
+from plots_circle import RUN_PATH, Plotter
 from gauge_detection.detection_inference import detection_gauge_face
 from key_point_detection.key_point_inference import KeyPointInference, detect_key_points
 from geometry.circle import fit_circle, get_line_circle_point, \
