@@ -10,19 +10,15 @@ from PIL import Image
 
 from plots import RUN_PATH, Plotter
 from gauge_detection.detection_inference import detection_gauge_face
-from ocr.ocr_inference import ocr, ocr_rotations, ocr_single_rotation, ocr_warp
 from key_point_detection.key_point_inference import KeyPointInference, detect_key_points
-from geometry.ellipse import fit_ellipse, cart_to_pol, get_line_ellipse_point, \
-    get_point_from_angle, get_polar_angle, get_theta_middle, get_ellipse_error
+from geometry.circle import fit_circle, get_line_circle_point, \
+    get_point_from_angle, get_polar_angle, get_theta_middle, get_circle_error
 from angle_reading_fit.angle_converter import AngleConverter
 from angle_reading_fit.line_fit import line_fit, line_fit_ransac
 from segmentation.segmenation_inference import get_start_end_line, segment_gauge_needle, \
     get_fitted_line, cut_off_line
-# pylint: disable=no-name-in-module
-# pylint: disable=no-member
 from evaluation import constants
 
-import sys
 from pathlib import Path
 
 OCR_THRESHOLD = 0.7
@@ -92,11 +88,11 @@ def move_point_resize(point, original_resolution, resized_resolution):
 
 
 # here assume that both resolutions are squared
-def rescale_ellipse_resize(ellipse_params, original_resolution,
+def rescale_circle_resize(circle_params, original_resolution,
                            resized_resolution):
-    x0, y0, ap, bp, phi = ellipse_params
+    x0, y0, ap, bp, phi = circle_params
 
-    # move ellipse center
+    # move circle center
     x0_new, y0_new = move_point_resize((x0, y0), original_resolution,
                                        resized_resolution)
 
@@ -212,176 +208,53 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Finish key point detection")
 
-    # ------------------Ellipse Fitting-------------------------
+    # ------------------Circle Fitting-------------------------
 
     if debug:
         print("-------------------")
-        print("Ellipse Fitting")
+        print("Circle Fitting")
 
-    logging.info("Start ellipse fitting")
+    logging.info("Start circle fitting")
 
-    coeffs = fit_ellipse(key_points[:, 0], key_points[:, 1])
-    try:
-        ellipse_params = cart_to_pol(coeffs)
-    except ValueError:
-        logging.error("Ellipse parameters not an ellipse.")
-        errors[constants.NOT_AN_ELLIPSE_ERROR_KEY] = True
-        result.append({constants.READING_KEY: constants.FAILED})
-        result_full[constants.OCR_NUM_KEY] = constants.FAILED
-        result_full[constants.NEEDLE_MASK_KEY] = constants.FAILED
-        write_files(result, result_full, errors, run_path, eval_mode)
-        raise Exception("Ellipse parameters not an ellipse")
+    circle_params = fit_circle(key_points[:, 0], key_points[:, 1])
+    # try:
+    #     ellipse_params = cart_to_pol(coeffs)
+    # except ValueError:
+    #     logging.error("Ellipse parameters not an ellipse.")
+    #     errors[constants.NOT_AN_ELLIPSE_ERROR_KEY] = True
+    #     result.append({constants.READING_KEY: constants.FAILED})
+    #     result_full[constants.OCR_NUM_KEY] = constants.FAILED
+    #     result_full[constants.NEEDLE_MASK_KEY] = constants.FAILED
+    #     write_files(result, result_full, errors, run_path, eval_mode)
+    #     raise Exception("Ellipse parameters not an ellipse")
 
-    ellipse_error = get_ellipse_error(key_points, ellipse_params)
-    errors["Ellipse fit error"] = ellipse_error
+    circle_error = get_circle_error(key_points, circle_params)
+    errors["circle fit error"] = circle_error
 
     if debug:
-        plotter.plot_ellipse(key_points, ellipse_params, 'key_points')
+        plotter.plot_circle(key_points, circle_params, 'key_points')
 
-    logging.info("Finish ellipse fitting")
+    logging.info("Finish circle fitting")
 
     # calculate zero point
 
     # Find bottom point to set there the zero for wrap around
     if WRAP_AROUND_FIX and start_point.shape == (1, 2) \
         and end_point.shape == (1, 2):
-        theta_start = get_polar_angle(start_point.flatten(), ellipse_params)
-        theta_end = get_polar_angle(end_point.flatten(), ellipse_params)
+        theta_start = get_polar_angle(start_point.flatten(), circle_params)
+        theta_end = get_polar_angle(end_point.flatten(), circle_params)
         theta_zero = get_theta_middle(theta_start, theta_end)
     else:
         bottom_middle = np.array((RESOLUTION[0] / 2, RESOLUTION[1]))
-        theta_zero = get_polar_angle(bottom_middle, ellipse_params)
+        theta_zero = get_polar_angle(bottom_middle, circle_params)
 
-    zero_point = get_point_from_angle(theta_zero, ellipse_params)
+    zero_point = get_point_from_angle(theta_zero, circle_params)
     if debug:
-        plotter.plot_zero_point_ellipse(np.array(zero_point),
+        plotter.plot_zero_point_circle(np.array(zero_point),
                                         np.vstack((start_point, end_point)),
-                                        ellipse_params)
+                                        circle_params)
 
     # # ------------------OCR-------------------------
-
-    # Important detail here: we do the ocr on the cropped non resized image,
-    # to not limit the ocr resolution
-
-    # if debug:
-    #     print("-------------------")
-    #     print("OCR")
-
-    # logging.info("Start OCR")
-
-    # cropped_img_resolution = (cropped_img.shape[1], cropped_img.shape[0])
-
-    # if RANDOM_ROTATIONS:
-    #     ocr_readings, ocr_visualization, degree = ocr_rotations(
-    #         cropped_img, plotter, debug)
-    #     logging.info("Rotate image by %s degrees", degree)
-    #     if eval_mode:
-    #         result_full[constants.OCR_ROTATION_KEY] = degree
-    # elif WARP_OCR:
-    #     # resize the zero point and ellipse center to original resolution
-    #     res_zero_point = list(
-    #         move_point_resize(zero_point, RESOLUTION, cropped_img_resolution))
-    #     res_ellipse_params = rescale_ellipse_resize(ellipse_params, RESOLUTION,
-    #                                                 cropped_img_resolution)
-    #     # Here we use zero-point rotation
-    #     if OCR_ROTATION:
-    #         ocr_readings, ocr_visualization, degree = ocr_warp(
-    #             cropped_img, res_zero_point, res_ellipse_params, plotter,
-    #             debug, RANDOM_ROTATIONS, ZERO_POINT_ROTATION)
-    #         logging.info("Rotate image by %s degrees", degree)
-    #         if eval_mode:
-    #             result_full[constants.OCR_ROTATION_KEY] = degree
-    #     else:
-    #         # pylint: disable-next=unbalanced-tuple-unpacking
-    #         ocr_readings, ocr_visualization = ocr_warp(
-    #             cropped_img, res_zero_point, res_ellipse_params, plotter,
-    #             debug, RANDOM_ROTATIONS, ZERO_POINT_ROTATION)
-    # elif ZERO_POINT_ROTATION:
-    #     # resize the zero point and ellipse center to original resolution
-    #     ellipse_x = ellipse_params[0] * cropped_img.shape[1] / RESOLUTION[1]
-    #     ellipse_y = ellipse_params[1] * cropped_img.shape[0] / RESOLUTION[0]
-    #     zero_point_x = zero_point[0] * cropped_img.shape[1] / RESOLUTION[1]
-    #     zero_point_y = zero_point[1] * cropped_img.shape[0] / RESOLUTION[0]
-
-    #     ocr_readings, ocr_visualization, degree = ocr_single_rotation(
-    #         cropped_img, (zero_point_x, zero_point_y), (ellipse_x, ellipse_y),
-    #         plotter, debug)
-    #     logging.info("Rotate image by %s degrees", degree)
-    #     if eval_mode:
-    #         result_full[constants.OCR_ROTATION_KEY] = degree
-    # else:
-    #     if debug:
-    #         ocr_readings, ocr_visualization = ocr(cropped_img, debug)
-    #     else:
-    #         ocr_readings = ocr(cropped_img, debug)
-
-    # # resize detected ocr to our resized image.
-    # for reading in ocr_readings:
-    #     polygon = reading.polygon
-    #     polygon[:, 0] = polygon[:, 0] * RESOLUTION[1] / cropped_img.shape[1]
-    #     polygon[:, 1] = polygon[:, 1] * RESOLUTION[0] / cropped_img.shape[0]
-    #     reading.set_polygon(polygon)
-
-    # if debug:
-    #     plotter.plot_ocr_visualization(ocr_visualization)
-    #     plotter.plot_ocr(ocr_readings, title='full')
-
-    # # find unit from the detected readings.
-    # unit_readings = []
-    # for reading in ocr_readings:
-    #     if reading.is_unit():
-    #         unit_readings.append(reading)
-
-    # if len(unit_readings) == 0:
-    #     unit = None
-    #     result_full[constants.OCR_UNIT_KEY] = constants.NOT_FOUND
-    # elif len(unit_readings) == 1:
-    #     unit = unit_readings[0].reading
-    #     box = unit_readings[0].get_bounding_box()
-    #     result_full[constants.OCR_UNIT_KEY] = {
-    #         'x': box[0],
-    #         'y': box[1],
-    #         'width': box[2] - box[0],
-    #         'height': box[3] - box[1],
-    #     }
-    # # if multiple detections add a list of these readings.
-    # else:
-    #     unit = None
-    #     result_full[constants.OCR_UNIT_KEY] = constants.MULTIPLE_FOUND
-
-    # # get list of ocr readings that are the numbers
-    # number_labels = []
-    # for reading in ocr_readings:
-    #     if reading.is_number() and reading.confidence > OCR_THRESHOLD:
-    #         # Add heuristics to filter out serial numbers
-    #         if not (abs(reading.number) > 10000 or
-    #                 (abs(reading.number) > 100 and reading.number % 10 != 0)):
-    #             number_labels.append(reading)
-
-    # # calculate confidence value for confidence score in final reading
-    # mean_number_ocr_conf = 0
-    # for number_label in number_labels:
-    #     mean_number_ocr_conf += number_label.confidence / len(number_labels)
-    # errors["OCR numbers mean lack of confidence"] = 1 - mean_number_ocr_conf
-
-    # # save the ocr results for the full evaluation
-    # if eval_mode:
-    #     ocr_bbox_list = []
-    #     for number_label in number_labels:
-    #         box = number_label.get_bounding_box()
-    #         ocr_bbox_list.append({
-    #             'x': box[0],
-    #             'y': box[1],
-    #             'width': box[2] - box[0],
-    #             'height': box[3] - box[1],
-    #         })
-    #     result_full[constants.OCR_NUM_KEY] = ocr_bbox_list
-
-    # if debug:
-    #     plotter.plot_ocr(number_labels, title='numbers')
-    #     plotter.plot_ocr(unit_readings, title='unit')
-
-    # logging.info("Finish OCR")
 
     # ------------------Segmentation-------------------------
 
@@ -426,60 +299,36 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Finish segmentation")
 
-    # ------------------Project OCR Numbers to ellipse-------------------------
+    # ------------------Project OCR Numbers to circle-------------------------
 
-    # if debug:
-    #     print("-------------------")
-    #     print("Projection")
-
-    # logging.info("Do projection on ellipse")
-
-    # if len(number_labels) == 0:
-    #     print("Didn't find any numbers with ocr")
-    #     logging.error("Didn't find any numbers with ocr")
-    #     errors[constants.OCR_NONE_DETECTED_KEY] = True
-    #     result.append({constants.READING_KEY: constants.FAILED})
-    #     write_files(result, result_full, errors, run_path, eval_mode)
-    #     raise Exception("OCR failed, no numbers found")
-    # if len(number_labels) == 1:
-    #     logging.warning("Only found 1 number with ocr")
-    #     errors[constants.OCR_ONLY_ONE_DETECTED_KEY] = True
-
-    # for number in number_labels:
-    #     theta = get_polar_angle(number.center, ellipse_params)
-    #     number.set_theta(theta)
-
-    # if debug:
-    #     plotter.plot_project_points_ellipse(number_labels, ellipse_params)
-
-    # ------------------Project start and end points to ellipse-------------------------
+    # ------------------Project start and end points to circle-------------------------
 
     start_point_xy = [start_point[0][0], start_point[0][1]]
     end_point_xy = [end_point[0][0], end_point[0][1]]
-    theta_start = get_polar_angle(start_point_xy, ellipse_params)
-    theta_end = get_polar_angle(end_point_xy, ellipse_params)
+    theta_start = get_polar_angle(start_point_xy, circle_params)
+    theta_end = get_polar_angle(end_point_xy, circle_params)
 
-    # ------------------Project Needle to ellipse-------------------------
+    # ------------------Project Needle to circle-------------------------
 
-    point_needle_ellipse = get_line_ellipse_point(
+    point_needle_circle = get_line_circle_point(
         needle_line_coeffs, (needle_line_start_x, needle_line_end_x),
-        ellipse_params)
+        circle_params)
 
-    if point_needle_ellipse.shape[0] == 0:
-        logging.error("Needle line and ellipse do not intersect!")
+    if point_needle_circle.shape[0] == 0:
+        logging.error("Needle line and circle do not intersect!")
         errors[constants.OCR_NONE_DETECTED_KEY] = True
         result.append({constants.READING_KEY: constants.FAILED})
         write_files(result, result_full, errors, run_path, eval_mode)
-        raise Exception("Needle line and ellipse do not intersect")
+        raise Exception("Needle line and circle do not intersect")
 
     if debug:
-        plotter.plot_ellipse(point_needle_ellipse.reshape(1, 2),
-                             ellipse_params, 'needle_point')
+        plotter.plot_circle(point_needle_circle.reshape(1, 2),
+                             circle_params, 'needle_point')
 
     # ------------------Fit line to angles and get reading of needle-------------------------
 
-    # Find angle of needle ellipse point
-    needle_angle = get_polar_angle(point_needle_ellipse, ellipse_params)
+    # Find angle of needle circle point
+    needle_angle = get_polar_angle(point_needle_circle, circle_params)
 
     angle_converter = AngleConverter(theta_zero)
 
@@ -527,8 +376,8 @@ def process_image(image, detection_model_path, key_point_model_path,
                                     (needle_angle_conv, reading), reading_line)
 
         print(f"Final reading is: {reading} {unit}")
-        plotter.plot_final_reading_ellipse([], point_needle_ellipse,
-                                           round(reading, 1), ellipse_params)
+        plotter.plot_final_reading_circle([], point_needle_circle,
+                                           round(reading, 1), circle_params)
 
     # ------------------Write result to file-------------------------
     write_files(result, result_full, errors, run_path, eval_mode)
