@@ -9,7 +9,7 @@ from auto_process import scanActiveCameras
 
 INPUT_PATH = "test_cv_local/inputs/"
 OUTPUT_PATH = "test_cv_local/outputs/"
-TIME_GAP = 3
+TIME_GAP = 5
 
 def main():
     # camera_index_list = scanActiveCameras()
@@ -34,24 +34,24 @@ def main():
     os.makedirs(in_path, exist_ok=True)
     os.makedirs(out_path, exist_ok=True)
 
-    # cam = cv2.VideoCapture(index)
-    # print(f"!!!!!!!!Taking photo in {TIME_GAP} seconds!!!!!!!!!")
-    # time.sleep(TIME_GAP)
-    # print("!!!!!!!!!Start taking photo now!!!!!!!!!!!")
-    # i = 1
-    # while i <= num:
-    #     print(f"Took image {i}, waiting for {TIME_GAP}s...")
-    #     ret, frame = cam.read()
-    #     img_path = INPUT_PATH + folder_name + "/" + str(i) + ".jpg"
-    #     print(img_path)
-    #     flag = cv2.imwrite(img_path, frame)
-    #     if not flag:
-    #         print("Image save failed")
-    #     else:
-    #         print(f"Image {i} is saved successfully at {img_path}")
-    #     time.sleep(TIME_GAP)
-    #     i += 1
-    # cam.release()
+    cam = cv2.VideoCapture(index)
+    print(f"!!!!!!!!Taking photo in {TIME_GAP} seconds!!!!!!!!!")
+    time.sleep(TIME_GAP)
+    print("!!!!!!!!!Start taking photo now!!!!!!!!!!!")
+    i = 1
+    while i <= num:
+        print(f"Took image {i}, waiting for {TIME_GAP}s...")
+        ret, frame = cam.read()
+        img_path = INPUT_PATH + folder_name + "/" + str(i) + ".jpg"
+        print(img_path)
+        flag = cv2.imwrite(img_path, frame)
+        if not flag:
+            print("Image save failed")
+        else:
+            print(f"Image {i} is saved successfully at {img_path}")
+        time.sleep(TIME_GAP)
+        i += 1
+    cam.release()
 
     try:
         os.execv(sys.executable, 
