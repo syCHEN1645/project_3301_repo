@@ -96,9 +96,13 @@ def main():
     while i <= num:
         # get actual reading
         cv_result_path = out_path + "/" + str(i) + ".jpg" + "/" + CV_RESULT_FILE_NAME
-        with open(f"{cv_result_path}", "r") as f:
-            data = json.load(f)
-            actual_reading = data[0]["reading"]
+        try:
+            with open(f"{cv_result_path}", "r") as f:
+                data = json.load(f)
+                actual_reading = data[0]["reading"]
+        except:
+            print(f"Result of {i} is not found, taken as failed")
+            actual_reading = "Failed"
 
         # calculate statics
         correct_reading = correct_readings[i - 1]
