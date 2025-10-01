@@ -9,14 +9,14 @@ import cv2
 from datetime import datetime
 import json
 from config import verify_model_files, CAPTURE_INTERVAL
-
+import random
 
 # Add project root to sys.path for absolute imports
 # sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 def redirect_camera_output(cam_index, camera_name):
     #now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"logs/camera_output_{cam_index}.log"
+    log_filename = f"logs/camera_output_{cam_index}_{camera_name}_{datetime.now().strftime('%Y%m%d_%H')}.log"
     os.makedirs("logs", exist_ok=True)
     log_file = open(log_filename, "a")
     sys.stdout = log_file
@@ -25,7 +25,7 @@ def redirect_camera_output(cam_index, camera_name):
 
 def redirect_subprocess_output(cam_index, camera_name):
     #now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"logs/subprocess_output_{cam_index}.log"
+    log_filename = f"logs/subprocess_output_{cam_index}_{camera_name}_{datetime.now().strftime('%Y%m%d_%H')}.log"
     os.makedirs("logs", exist_ok=True)
     log_file = open(log_filename, "a")
     sys.stdout = log_file
@@ -70,29 +70,38 @@ def isActiveCamera(name):
 
 
 def postCapture(name, rgd_img, camera_index, camera_details):
-    #redirect_subprocess_output(camera_index, {camera_details['camera_name']})
+    redirect_subprocess_output(camera_index, {camera_details['camera_name']})
 
     try:
         print("reading image")
         # data = readImage(name, rgd_img, camera_index, camera_details)
         data = runModel(name, rgd_img, camera_index, camera_details)
-        print(data)
+        print(f"Data inferred from {camera_index}_{camera_details['camera_name']}: {data}")
         if data is None:
             print("No data returned from image processing")
             return
             
-        ack = sendData(data)  # Wrap in list as expected by sendData
-        if ack == 2:
-            print("CV failed to read, try again later")
-            return
+        data_full = {
+            "oilfield" : camera_details["oilfield_name"],
+            "wellhead" : camera_details["wellhead_name"],
+            "gauge" : camera_details["gauge_name"],
+            "reading" : data["value"],
+            "unit" : data["unit"],
+            "sensor_name" : camera_details["sensor_name"]
+        }
+        ack = sendData(data_full)  # Wrap in list as expected by sendData
+        # if ack == 2:
+        #     print("CV failed to read, try again later")
+        #     return
             
-        count = 0
-        while ack != 1 and count < 20:
-            time.sleep(3)
-            count += 1
-            ack = sendData(data)
+        # count = 0
+        # while ack != 1 and count < 20:
+        #     time.sleep(3)
+        #     count += 1
+        #     ack = sendData(data)
             
-        print(f"Data processing complete. Acknowledgment: {ack}")
+        # print(f"Data processing complete. Acknowledgment: {ack}")
+        print(f"Data processing complete for {camera_index}_{camera_details['camera_name']}")
         
     except Exception as e:
         print(f"Error in postCapture: {e}")
@@ -103,10 +112,9 @@ def postCapture(name, rgd_img, camera_index, camera_details):
 
 
 def fullProcess(camera_index, camera_details, interval):
-    #redirect_camera_output(camera_index, {camera_details['camera_name']})
+    redirect_camera_output(camera_index, {camera_details['camera_name']})
 
     # camera_details in a dict with the format {camera_index : {configuration key value pairs}}
-    # next(iter(camera_details)) gives the camera index
     # 
     
     print(f"Start running full process for camera {camera_index}")
@@ -138,7 +146,7 @@ def fullProcess(camera_index, camera_details, interval):
             elapsed = time.time() - start
             sleep_time = max(0, interval - elapsed)
             print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Sleeping {sleep_time:.1f}s")
-            time.sleep(30)
+            # time.sleep(30)
 
     except KeyboardInterrupt:
         print(f"Stopping camera {camera_index}_{camera_details['camera_name']} processing")

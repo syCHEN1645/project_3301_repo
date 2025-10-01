@@ -57,9 +57,11 @@ def main():
         print(f"\nDetected camera index: {index}")
         print("Please enter a list of dictionaries (one per camera) in the following format:\n")
         print("""{
-            "camera_name": "Cam1",
+            "oilfield_name" : OL1,
             "wellhead_name": "WH1",
             "gauge_name": "G1",
+            "camera_name": "Cam1",
+            "sensor_name" : "SN_1",
             "start_marking": 0.0,
             "end_marking": 100.0,
             "unit": "psi"
@@ -68,7 +70,7 @@ def main():
 
         user_input_str = input()
 
-        expected_keys = {"camera_name", "wellhead_name", "gauge_name", "start_marking", "end_marking", "unit"}
+        expected_keys = {"oilfield_name", "wellhead_name", "gauge_name", "camera_name", "sensor_name", "start_marking", "end_marking", "unit"}
 
         try:
             user_input = json.loads(user_input_str)
@@ -79,7 +81,7 @@ def main():
             if not expected_keys.issubset(user_input.keys()):
                 raise ValueError(f"Missing keys in entry {index}: {user_input}")
             
-            if not all(isinstance(user_input[key], (str)) for key in ["camera_name", "wellhead_name", "gauge_name", "unit"]):
+            if not all(isinstance(user_input[key], (str)) for key in ["oilfield_name", "wellhead_name", "gauge_name", "camera_name", "sensor_name", "unit"]):
                 raise TypeError("start_marking and end_marking must both be numbers")
             if not all(isinstance(user_input[key], (float)) for key in ["start_marking", "end_marking"]):
                 raise TypeError("start_marking and end_marking must both be numbers")
