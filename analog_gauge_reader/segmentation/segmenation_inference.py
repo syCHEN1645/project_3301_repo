@@ -25,7 +25,37 @@ def segment_gauge_needle(image, model_path='best.pt'):
                                      dsize=(image.shape[1], image.shape[0]),
                                      interpolation=cv2.INTER_NEAREST)
 
-    y_coords, x_coords = np.where(needle_mask_resized)
+    # scale 255 to fit into the connected component function
+    binary_mask = needle_mask_resized.astype(np.uint8) * 255
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+            binary_mask,
+            connectivity=8)
+    
+    # # select only the largest blob to ignore noises
+    # if num_labels > 1:
+    #     # background has label 0, skip row 0 (from 1 onwards) and get areas
+    #     areas = stats[1:, cv2.CC_STAT_AREA]
+    #     # get the index of largest area (offset 1 as skipped 0)
+    #     largest = np.argmax(areas) + 1
+    #     # no /255 as boolean -> uint8 is either 1 or 0
+    #     cleaned_mask = (labels == largest).astype(np.uint8)
+    # else:
+    #     # only have background, no needle detected
+    #     cleaned_mask = binary_mask / 255
+
+    # select only the most centered to ignore noises
+    if num_labels > 1:
+        img_center = np.array([image.shape[1] / 2, image.shape[0] / 2])
+        dists = []
+        for i in range(1, num_labels):
+            centroid = centroids[i]
+            dists.append(np.linalg.norm(centroid - img_center))
+        closest = np.argmin(dists) + 1
+        cleaned_mask = (labels == closest).astype(np.uint8)
+    else:
+        cleaned_mask = binary_mask / 255
+
+    y_coords, x_coords = np.where(cleaned_mask)
 
     return x_coords, y_coords
 

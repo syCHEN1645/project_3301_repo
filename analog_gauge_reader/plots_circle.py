@@ -10,7 +10,8 @@ from PIL import Image
 
 # pylint: disable=no-member
 from evaluation import constants
-from geometry.ellipse import get_ellipse_pts, get_point_from_angle
+# from geometry.ellipse import get_ellipse_pts, get_point_from_angle
+from geometry.circle import get_circle_pts, get_point_from_angle
 
 matplotlib.use('Agg')
 
@@ -131,22 +132,22 @@ class Plotter:
         plt.savefig(path)
         # plt.show()
 
-    def plot_just_ellipse(self, image, ellipse_params, title):
+    def plot_just_circle(self, image, circle_params, title):
         plt.figure()
         plt.imshow(image)
-        x, y = get_ellipse_pts(ellipse_params)
-        plt.plot(x, y)  # plot ellipse
-        path = os.path.join(self.run_path, f"ellipse_{title}.jpg")
+        x, y = get_circle_pts(circle_params)
+        plt.plot(x, y)  # plot circle
+        path = os.path.join(self.run_path, f"circle_{title}.jpg")
         plt.savefig(path)
 
-    def plot_ellipse(self,
+    def plot_circle(self,
                      points,
-                     ellipse_params,
+                     circle_params,
                      title,
                      annotations=None,
                      annotation_colors=None):
         """
-        plot ellipse and points with annotations.
+        plot circle and points with annotations.
         points is a 2d numpy array with one point per row
         """
         plt.figure()
@@ -173,17 +174,17 @@ class Plotter:
                                       alpha=0.5,
                                       edgecolor='none'))
 
-        x, y = get_ellipse_pts(ellipse_params)
-        plt.plot(x, y)  # plot ellipse
+        x, y = get_circle_pts(circle_params)
+        plt.plot(x, y)  # plot circle
 
-        path = os.path.join(self.run_path, f"ellipse_results_{title}.jpg")
+        path = os.path.join(self.run_path, f"circle_results_{title}.jpg")
         plt.savefig(path)
         # plt.show()
 
-    def plot_zero_point_ellipse(self, zero_point, start_end_point,
-                                ellipse_params):
+    def plot_zero_point_circle(self, zero_point, start_end_point,
+                                circle_params, center_point=[0,0]):
         """
-        plot ellipse and points with annotations.
+        plot circle and points with annotations.
         points is a 2d numpy array with one point per row
         """
         plt.figure()
@@ -198,9 +199,10 @@ class Plotter:
 
         zero_point_color = '#41ff00'
         start_end_color = '#ff0000'
+        center_point_color = '#ff00ff'
 
-        x, y = get_ellipse_pts(ellipse_params)
-        plt.plot(x, y)  # plot ellipse
+        x, y = get_circle_pts(circle_params)
+        plt.plot(x, y)  # plot circle
 
         x = start_end_point[:, 0]
         y = start_end_point[:, 1]
@@ -210,21 +212,23 @@ class Plotter:
         y = zero_point[1]
         ax.scatter(x, y, c=zero_point_color, s=100)  # plot start end point
 
+        ax.scatter(center_point[0], center_point[1], c=center_point_color, s=100)  # plot center point
+
         zero_patch = patches.Patch(color=zero_point_color, label='zero-point')
         start_end_patch = patches.Patch(color=start_end_color,
                                         label='Start and End Point')
         plt.legend(handles=[zero_patch, start_end_patch])
 
-        path = os.path.join(self.run_path, "ellipse_zero_point.jpg")
+        path = os.path.join(self.run_path, "circle_zero_point.jpg")
         plt.savefig(path)
         # plt.show()
 
-    def plot_project_points_ellipse(self, number_labels, ellipse_params):
+    def plot_project_points_circle(self, number_labels, circle_params):
         projected_points = []
         annotations = []
 
         for number in number_labels:
-            proj_point = get_point_from_angle(number.theta, ellipse_params)
+            proj_point = get_point_from_angle(number.theta, circle_params)
             projected_points.append(proj_point)
             annotations.append(number.reading)
 
@@ -236,19 +240,19 @@ class Plotter:
         ocr_color = '#38761d'
         annotation_colors = [ocr_color for _ in annotations]
 
-        self.plot_ellipse(projected_points_arr,
-                          ellipse_params,
+        self.plot_circle(projected_points_arr,
+                          circle_params,
                           title='projected',
                           annotations=annotations,
                           annotation_colors=annotation_colors)
 
-    def plot_final_reading_ellipse(self, number_labels, needle_point, reading,
-                                   ellipse_params):
+    def plot_final_reading_circle(self, number_labels, needle_point, reading,
+                                   circle_params):
         projected_points = []
         annotations = []
 
         for number in number_labels:
-            proj_point = get_point_from_angle(number.theta, ellipse_params)
+            proj_point = get_point_from_angle(number.theta, circle_params)
             projected_points.append(proj_point)
             annotations.append(number.reading)
 
@@ -265,8 +269,8 @@ class Plotter:
         annotation_colors = [ocr_color for _ in annotations]
         annotation_colors[-1] = final_reading_color
 
-        self.plot_ellipse(projected_points_arr,
-                          ellipse_params,
+        self.plot_circle(projected_points_arr,
+                          circle_params,
                           title='final',
                           annotations=annotations,
                           annotation_colors=annotation_colors)
@@ -368,7 +372,7 @@ class Plotter:
         plt.scatter(needle[0], needle[1], color='red', label='needle_point')
 
         # Add labels and title
-        plt.xlabel('angle on ellipse')
+        plt.xlabel('angle on circle')
         plt.ylabel('reading on gauge')
 
         # Add legend
@@ -398,7 +402,7 @@ class Plotter:
         plt.scatter(needle[0], needle[1], color='red', label='needle_point')
 
         # Add labels and title
-        plt.xlabel('angle on ellipse')
+        plt.xlabel('angle on circle')
         plt.ylabel('reading on gauge')
 
         # Add legend

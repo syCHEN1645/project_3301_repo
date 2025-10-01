@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+# this whole file is only used in ocr inference
 
 def warp_ellipse_to_circle(image, ellipse_center, ellipse_axes, ellipse_angle):
     image_height, image_width = image.shape[:2]

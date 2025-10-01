@@ -7,3 +7,8 @@ config_calibration.json
 captured_images_archive/
 logs_archive/
 config.py
+*.jpg
+*.json
+test_cv_local/
+analog_gauge_reader/__pycache__/pipeline_v3.cpython-38.pyc
+model_training/
