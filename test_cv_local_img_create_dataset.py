@@ -126,17 +126,14 @@ def run_test(in_path, out_path, start_marking, end_marking, unit):
     try:
         subprocess.run([
             sys.executable,
-            "analog_gauge_reader/pipeline_v5.py",
+            "analog_gauge_reader/pipeline_v2.py",
             "--detection_model", DETECTION_MODEL_PATH,
             "--segmentation_model", SEGMENTATION_MODEL_PATH,
             "--key_point_model", KEY_POINT_MODEL_PATH,
             "--base_path", out_path,
             "--input", in_path,
             "--debug",
-            "--eval",
-            "--start_marking", str(start_marking),
-            "--end_marking", str(end_marking),
-            "--unit", str(unit)
+            "--eval"
         ], check=True)
     except Exception as e:
         print(f"Error running pipeline: {e}")
