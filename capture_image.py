@@ -1,5 +1,6 @@
 import cv2
 import os
+import math
 from datetime import datetime
 
 SAVE_PATH = "captured_images"
@@ -12,7 +13,10 @@ def captureImage(capture, index):
 
     print(f"Capture from camera {index}")
 
-    ret, frame = capture.read()
+    # flush buffer before taking new picture
+    for _ in range(0, math.floor(capture.get(cv2.CAP_PROP_BUFFERSIZE)) + 1):
+            ret, frame = capture.read()
+
     if ret:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         name = f"{index}_{timestamp}"
