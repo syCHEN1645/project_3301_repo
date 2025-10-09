@@ -1,5 +1,5 @@
 from capture_image import captureImage
-from read_image import readImage, runModel
+from read_image import runModel
 from send_data import sendData
 from multiprocessing import Process
 import time
@@ -8,8 +8,10 @@ import os
 import cv2
 from datetime import datetime
 import json
-from config import verify_model_files, CAPTURE_INTERVAL
-import random
+from ultralytics import YOLO
+from analog_gauge_reader.key_point_detection.key_point_inference import KeyPointInference
+
+from config import verify_model_files, CAPTURE_INTERVAL, DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODEL_PATH
 
 # Add project root to sys.path for absolute imports
 # sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -48,7 +50,6 @@ def scanActiveCameras():
     return activeCams
 
 
-
 def isActiveCamera(name):
     if (name.startswith("video")):
         name = name.replace("video", "")
@@ -69,13 +70,13 @@ def isActiveCamera(name):
     return -1
 
 
-def postCapture(name, rgd_img, camera_index, camera_details):
+def postCapture(name, rgd_img, camera_index, camera_details, models):
     redirect_subprocess_output(camera_index, {camera_details['camera_name']})
 
     try:
         print("reading image")
         # data = readImage(name, rgd_img, camera_index, camera_details)
-        data = runModel(name, rgd_img, camera_index, camera_details)
+        data = runModel(name, rgd_img, camera_index, camera_details, models)
         print(f"Data inferred from {camera_index}_{camera_details['camera_name']}: {data}")
         if data is None:
             print("No data returned from image processing")
@@ -129,12 +130,17 @@ def fullProcess(camera_index, camera_details, interval):
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     capture.set(cv2.CAP_PROP_FPS, 5)
 
+    segmentation_model = YOLO.model(SEGMENTATION_MODEL_PATH)
+    keypoint_model = KeyPointInference(KEY_POINT_MODEL_PATH)
+    detection_model = YOLO.model(DETECTION_MODEL_PATH)
+    models = [detection_model, keypoint_model, segmentation_model]
+
     try:
         while True:
             start = time.time()
             name, frame = captureImage(capture, camera_index)
             if frame is not None:
-                postCapture(name, frame, camera_index, camera_details)
+                postCapture(name, frame, camera_index, camera_details, models)
                 print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Data processed successfully")
 
             else:

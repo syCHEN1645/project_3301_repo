@@ -3,6 +3,23 @@ import time
 import os
 import sys
 from datetime import datetime
+from ultralytics import YOLO
+
+from analog_gauge_reader.key_point_detection.key_point_inference import KeyPointInference, detect_key_points
+from config import SEGMENTATION_MODEL_PATH, DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH
+
+while True:
+    model1 = YOLO(SEGMENTATION_MODEL_PATH)
+    print(type(model1))
+    print("----------------")
+    model2 = YOLO(DETECTION_MODEL_PATH)
+    print(type(model2))
+    print(isinstance(model2, YOLO))
+    print("----------------")
+    model3 = key_point_inferencer = KeyPointInference(KEY_POINT_MODEL_PATH)
+    print(type(model3))
+    print(isinstance(model3, KeyPointInference))
+    print("----------------")
 
 os.makedirs("sample_pics", exist_ok=True)
 # 0 maps to /dev/video0
