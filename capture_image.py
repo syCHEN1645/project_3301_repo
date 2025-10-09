@@ -23,7 +23,7 @@ def captureImage(capture, index):
         rgb_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         #pil_img = Image.fromarray(rgb_img)
         # name of the image (without .jpg) and absolute path
-        filename, path = saveImage(frame, SAVE_PATH, index)
+        # filename, path = saveImage(frame, SAVE_PATH, index)
         return name, rgb_img
     print("Failed to capture")
     return None, None
