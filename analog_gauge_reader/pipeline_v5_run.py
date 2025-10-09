@@ -213,27 +213,14 @@ def process_image(image, detection_model_path, key_point_model_path,
     if debug:
         print("-------------------")
         print("Circle Fitting")
-
     logging.info("Start circle fitting")
 
     circle_params = fit_circle(key_points[:, 0], key_points[:, 1])
-    # try:
-    #     ellipse_params = cart_to_pol(coeffs)
-    # except ValueError:
-    #     logging.error("Ellipse parameters not an ellipse.")
-    #     errors[constants.NOT_AN_ELLIPSE_ERROR_KEY] = True
-    #     result.append({constants.READING_KEY: constants.FAILED})
-    #     result_full[constants.OCR_NUM_KEY] = constants.FAILED
-    #     result_full[constants.NEEDLE_MASK_KEY] = constants.FAILED
-    #     write_files(result, result_full, errors, run_path, eval_mode)
-    #     raise Exception("Ellipse parameters not an ellipse")
-
     circle_error = get_circle_error(key_points, circle_params)
     errors["circle fit error"] = circle_error
 
     if debug:
         plotter.plot_circle(key_points, circle_params, 'key_points')
-
     logging.info("Finish circle fitting")
 
     # calculate zero point
@@ -264,27 +251,40 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Start segmentation")
 
-    try:
-        needle_mask_x, needle_mask_y = segment_gauge_needle(
-            cropped_resized_img, segmentation_model_path)
-    except AttributeError:
-        logging.error("Segmentation failed, no needle found")
-        errors[constants.SEGMENTATION_FAILED_KEY] = True
-        result.append({constants.READING_KEY: constants.FAILED})
-        result_full[constants.NEEDLE_MASK_KEY] = constants.FAILED
-        write_files(result, result_full, errors, run_path, eval_mode)
-        raise Exception("Segmentation failed, no needle found")
+    is_distinct = False
+    count = 0
+    while ((not is_distinct) and count < 3):
+        count += 1
+        try:
+            needle_mask_x, needle_mask_y = segment_gauge_needle(
+                cropped_resized_img, segmentation_model_path)
+        except AttributeError:
+            logging.error("Segmentation failed, no needle found")
+            errors[constants.SEGMENTATION_FAILED_KEY] = True
+            result.append({constants.READING_KEY: constants.FAILED})
+            result_full[constants.NEEDLE_MASK_KEY] = constants.FAILED
+            write_files(result, result_full, errors, run_path, eval_mode)
+            raise Exception("Segmentation failed, no needle found")
 
-    if eval_mode:
-        result_full[constants.NEEDLE_MASK_KEY] = {
-            'x': needle_mask_x.tolist(),
-            'y': needle_mask_y.tolist()
-        }
+        if eval_mode:
+            result_full[constants.NEEDLE_MASK_KEY] = {
+                'x': needle_mask_x.tolist(),
+                'y': needle_mask_y.tolist()
+            }
 
-    needle_line_coeffs, needle_error = get_fitted_line(needle_mask_x,
-                                                       needle_mask_y)
-    needle_line_start_x, needle_line_end_x = get_start_end_line(needle_mask_x)
-    needle_line_start_y, needle_line_end_y = get_start_end_line(needle_mask_y)
+        needle_line_coeffs, needle_error = get_fitted_line(needle_mask_x,
+                                                        needle_mask_y)
+        
+        # check if fitted line can tell clear distinction between needle head and tail
+        # loop until get a distinct result, or run out of 5 trys
+        needle_line_start_x, needle_line_end_x = get_start_end_line(needle_mask_x)
+        needle_line_start_y, needle_line_end_y = get_start_end_line(needle_mask_y)
+        circle_cx, circle_cy, circle_r = circle_params
+        start_d = np.linalg.norm(np.array(needle_line_start_x, needle_line_start_y) - np.array(circle_cx, circle_cy))
+        end_d = np.linalg.norm(np.array(needle_line_end_x, needle_line_end_y) - np.array(circle_cx, circle_cy))
+        # to be distinct, must have head >> tail, and head ~ radius
+        # coefficients here are approximated
+        is_distinct = (start_d > 1.2 * end_d and start_d > 0.8 * circle_r) or (end_d > 1.2 * start_d and end_d > 0.8 * circle_r)
 
     needle_line_start_x, needle_line_end_x = cut_off_line(
         [needle_line_start_x, needle_line_end_x], needle_line_start_y,
