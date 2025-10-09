@@ -113,6 +113,15 @@ def postCapture(name, rgd_img, camera_index, camera_details, models):
 
 
 def fullProcess(camera_index, camera_details, interval):
+    print("Loading models...")
+    segmentation_model = YOLO(SEGMENTATION_MODEL_PATH)
+    keypoint_model = KeyPointInference(KEY_POINT_MODEL_PATH)
+    # print(isinstance(keypoint_model, KeyPointInference))
+    detection_model = YOLO(DETECTION_MODEL_PATH)
+    models = [detection_model, keypoint_model, segmentation_model]
+    print("Loading models completes")
+    print()
+    
     redirect_camera_output(camera_index, {camera_details['camera_name']})
 
     # camera_details in a dict with the format {camera_index : {configuration key value pairs}}
@@ -129,14 +138,6 @@ def fullProcess(camera_index, camera_details, interval):
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, 680)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     capture.set(cv2.CAP_PROP_FPS, 5)
-
-    print("Loading models...")
-    segmentation_model = YOLO.model(SEGMENTATION_MODEL_PATH)
-    keypoint_model = KeyPointInference(KEY_POINT_MODEL_PATH)
-    detection_model = YOLO.model(DETECTION_MODEL_PATH)
-    models = [detection_model, keypoint_model, segmentation_model]
-    print("Loading models completes")
-    print()
 
     try:
         while True:

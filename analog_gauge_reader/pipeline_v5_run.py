@@ -11,7 +11,7 @@ from ultralytics import YOLO
 
 from plots_circle import RUN_PATH, Plotter
 from gauge_detection.detection_inference import detection_gauge_face, detection_gauge_face_use_model
-from key_point_detection.key_point_inference import KeyPointInference, detect_key_points
+from analog_gauge_reader.key_point_detection.key_point_inference import KeyPointInference, detect_key_points
 from geometry.circle import fit_circle, get_line_circle_point, \
     get_point_from_angle, get_polar_angle, get_theta_middle, get_circle_error
 from angle_reading_fit.angle_converter import AngleConverter
@@ -109,8 +109,6 @@ def process_image(image, detection_model_path, key_point_model_path,
                   segmentation_model_path, run_path, debug, eval_mode,
                   start_marking, end_marking, unit, image_is_raw=False):
     
-
-
     result = []
     errors = {}
     result_full = {}
@@ -180,10 +178,15 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     # if input is path, load model
     # if input is already model, use it
+    print(type(key_point_model_path))
+    print(isinstance(key_point_model_path, KeyPointInference))
+    print(type(KeyPointInference))
     if isinstance(key_point_model_path, str):
         key_point_inferencer = KeyPointInference(key_point_model_path)
+        print(type(key_point_inferencer))
     elif isinstance(key_point_model_path, KeyPointInference):
         key_point_inferencer = key_point_model_path
+        print(type(key_point_inferencer))
     heatmaps = key_point_inferencer.predict_heatmaps(cropped_resized_img)
     key_point_list = detect_key_points(heatmaps)
 

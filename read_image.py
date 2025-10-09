@@ -19,8 +19,8 @@ from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODE
 # imagePath is the absolute path of the original image
 # returns:
 # data object converted from .json file
-def readImage(imageName, rgd_img, camera_index, camera_details):
-    data = runModel(imageName, rgd_img, camera_index, camera_details)
+def readImage(imageName, rgd_img, camera_index, camera_details, models):
+    data = runModel(imageName, rgd_img, camera_index, camera_details, models)
     # data = retrieveResult(imageName)
     return data
 
