@@ -68,13 +68,7 @@ def main():
                   "--input",
                   in_path,
                   "--debug",
-                  "--eval",
-                  "--start_marking",
-                  (str)(start_marking),
-                  "--end_marking",
-                  (str)(end_marking),
-                  "--unit",
-                  (str)(unit)])
+                  "--eval"])
     except Exception as e:
         print(f"{e}")
 
