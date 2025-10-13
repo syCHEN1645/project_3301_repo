@@ -205,16 +205,16 @@ def run_test(in_path, out_path, start_marking, end_marking, unit):
     p_fail = n_fail / counter * 100
     stat = {
         "Total number": counter,
-        "Good": GOOD_THRESHOLD,
+        "Good Criteria": f"<={GOOD_THRESHOLD}%",
         "Good number": n_good,
         "Good percent": p_good,
-        "OK": GOOD_THRESHOLD,
+        "OK Criteria": f"<={OK_THRESHOLD}% (excluding Good)",
         "OK number": n_ok,
         "OK percent": p_ok,
-        "Bad": "Bad",
+        "Bad Criteria": f">{OK_THRESHOLD}%",
         "Bad number": n_bad,
         "Bad percent": p_bad,
-        "Fail": "Failed",
+        "Fail Criteria": "Failed to give any result",
         "Fail number": n_fail,
         "Fail percent": p_fail,
     }
