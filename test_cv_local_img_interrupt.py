@@ -73,7 +73,7 @@ def main():
     try:
         subprocess.run([
             sys.executable,
-            "analog_gauge_reader/pipeline_v6.py",
+            "analog_gauge_reader/pipeline_v3.py",
             "--detection_model", DETECTION_MODEL_PATH,
             "--segmentation_model", SEGMENTATION_MODEL_PATH,
             "--key_point_model", KEY_POINT_MODEL_PATH,

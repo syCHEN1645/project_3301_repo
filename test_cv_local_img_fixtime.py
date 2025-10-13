@@ -56,7 +56,7 @@ def main():
     try:
         os.execv(sys.executable, 
                  [sys.executable, 
-                  "analog_gauge_reader/pipeline_v5.py",
+                  "analog_gauge_reader/pipeline_v3.py",
                   "--detection_model",
                   DETECTION_MODEL_PATH,
                   "--segmentation_model",
