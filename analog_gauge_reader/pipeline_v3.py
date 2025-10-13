@@ -7,18 +7,18 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 
-from .plots import RUN_PATH, Plotter
-from .gauge_detection.detection_inference import detection_gauge_face
-from .key_point_detection.key_point_inference import KeyPointInference, detect_key_points
-from .geometry.ellipse import fit_ellipse, cart_to_pol, get_line_ellipse_point, \
+from analog_gauge_reader.plots import RUN_PATH, Plotter
+from analog_gauge_reader.gauge_detection.detection_inference import detection_gauge_face
+from analog_gauge_reader.key_point_detection.key_point_inference import KeyPointInference, detect_key_points
+from analog_gauge_reader.geometry.ellipse import fit_ellipse, cart_to_pol, get_line_ellipse_point, \
     get_point_from_angle, get_polar_angle, get_theta_middle, get_ellipse_error
-from .angle_reading_fit.angle_converter import AngleConverter
-from .angle_reading_fit.line_fit import line_fit, line_fit_ransac
-from .segmentation.segmenation_inference import get_start_end_line, segment_gauge_needle, \
+from analog_gauge_reader.angle_reading_fit.angle_converter import AngleConverter
+from analog_gauge_reader.angle_reading_fit.line_fit import line_fit, line_fit_ransac
+from analog_gauge_reader.segmentation.segmenation_inference import get_start_end_line, segment_gauge_needle, \
     get_fitted_line, cut_off_line
 # pylint: disable=no-name-in-module
 # pylint: disable=no-member
-from .evaluation import constants
+from analog_gauge_reader.evaluation import constants
 
 OCR_THRESHOLD = 0.7
 RESOLUTION = (

@@ -74,7 +74,7 @@ def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_
         start_marking=start_marking,
         end_marking=end_marking,
         unit=unit,
-        image_is_raw=True
+        image_is_raw=False
     )
     return result  # dict with {'value': ..., 'unit': ...}
 
