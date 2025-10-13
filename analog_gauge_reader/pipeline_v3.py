@@ -562,6 +562,7 @@ def main():
 
     start_marking = args.start_marking
     end_marking = args.end_marking
+    unit = args.unit
 
     # time_str = time.strftime("%Y%m%d%H%M%S")
     # base_path = os.path.join(base_path, RUN_PATH + '_' + time_str)
@@ -600,7 +601,9 @@ def main():
                       debug=args.debug,
                       eval_mode=args.eval,
                       start_marking=args.start_marking,
-                      end_marking=args.end_marking)
+                      end_marking=args.end_marking,
+                      unit=unit,
+                      image_is_raw=True)
     elif os.path.isdir(input_path):
         for image_name in os.listdir(input_path):
             img_path = os.path.join(input_path, image_name)
@@ -614,7 +617,9 @@ def main():
                               debug=args.debug,
                               eval_mode=args.eval,
                               start_marking=args.start_marking,
-                              end_marking=args.end_marking)
+                              end_marking=args.end_marking,
+                              unit=unit,
+                              image_is_raw=True)
 
             # pylint: disable=broad-except
             # For now want to catch general exceptions and still continue with the other images.
@@ -666,6 +671,9 @@ def read_args():
                         required=True)
     parser.add_argument('--end_marking',
                         type=float,
+                        required=True)
+    parser.add_argument('--unit',
+                        type=str,
                         required=True)
     return parser.parse_args()
 
