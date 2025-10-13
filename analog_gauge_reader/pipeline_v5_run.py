@@ -7,16 +7,17 @@ import json
 import cv2
 import numpy as np
 from PIL import Image
+from ultralytics import YOLO
 
 from plots_circle import RUN_PATH, Plotter
-from gauge_detection.detection_inference import detection_gauge_face
-from key_point_detection.key_point_inference import KeyPointInference, detect_key_points
+from gauge_detection.detection_inference import detection_gauge_face, detection_gauge_face_use_model
+from analog_gauge_reader.key_point_detection.key_point_inference import KeyPointInference, detect_key_points
 from geometry.circle import fit_circle, get_line_circle_point, \
     get_point_from_angle, get_polar_angle, get_theta_middle, get_circle_error
 from angle_reading_fit.angle_converter import AngleConverter
 from angle_reading_fit.line_fit import line_fit, line_fit_ransac
 from segmentation.segmenation_inference import get_start_end_line, segment_gauge_needle, \
-    get_fitted_line, cut_off_line
+    segment_gauge_needle_use_model, get_fitted_line, cut_off_line
 from evaluation import constants
 
 from pathlib import Path
@@ -107,7 +108,7 @@ def rescale_circle_resize(circle_params, original_resolution,
 def process_image(image, detection_model_path, key_point_model_path,
                   segmentation_model_path, run_path, debug, eval_mode,
                   start_marking, end_marking, unit, image_is_raw=False):
-
+    
     result = []
     errors = {}
     result_full = {}
@@ -137,7 +138,10 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Start Gauge Detection")
 
-    box, all_boxes = detection_gauge_face(image, detection_model_path)
+    if isinstance(detection_model_path, str):
+        box, all_boxes = detection_gauge_face(image, detection_model_path)
+    elif isinstance(detection_model_path, YOLO):
+        box, all_boxes = detection_gauge_face_use_model(image, detection_model_path)
 
     if debug:
         plotter.plot_bounding_box_img(all_boxes)
@@ -172,7 +176,17 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Start key point detection")
 
-    key_point_inferencer = KeyPointInference(key_point_model_path)
+    # if input is path, load model
+    # if input is already model, use it
+    print(type(key_point_model_path))
+    print(isinstance(key_point_model_path, KeyPointInference))
+    print(type(KeyPointInference))
+    if isinstance(key_point_model_path, str):
+        key_point_inferencer = KeyPointInference(key_point_model_path)
+        print(type(key_point_inferencer))
+    elif isinstance(key_point_model_path, KeyPointInference):
+        key_point_inferencer = key_point_model_path
+        print(type(key_point_inferencer))
     heatmaps = key_point_inferencer.predict_heatmaps(cropped_resized_img)
     key_point_list = detect_key_points(heatmaps)
 
@@ -265,8 +279,12 @@ def process_image(image, detection_model_path, key_point_model_path,
     logging.info("Start segmentation")
 
     try:
-        needle_mask_x, needle_mask_y = segment_gauge_needle(
-            cropped_resized_img, segmentation_model_path)
+        if isinstance(segmentation_model_path, str):
+            needle_mask_x, needle_mask_y = segment_gauge_needle(
+                cropped_resized_img, segmentation_model_path)
+        elif isinstance(segmentation_model_path, YOLO):
+            needle_mask_x, needle_mask_y = segment_gauge_needle_use_model(
+                cropped_resized_img, segmentation_model_path)
     except AttributeError:
         logging.error("Segmentation failed, no needle found")
         errors[constants.SEGMENTATION_FAILED_KEY] = True
@@ -383,7 +401,6 @@ def process_image(image, detection_model_path, key_point_model_path,
     write_files(result, result_full, errors, run_path, eval_mode)
 
     return {"value": reading, "unit": unit}
-
 
 def write_files(result, result_full, errors, run_path, eval_mode):
     result_path = os.path.join(run_path, constants.RESULT_FILE_NAME)

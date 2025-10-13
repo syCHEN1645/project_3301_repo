@@ -1,5 +1,6 @@
 import cv2
 import os
+import math
 from datetime import datetime
 
 SAVE_PATH = "captured_images"
@@ -12,14 +13,17 @@ def captureImage(capture, index):
 
     print(f"Capture from camera {index}")
 
-    ret, frame = capture.read()
+    # flush buffer before taking new picture
+    for _ in range(0, math.floor(capture.get(cv2.CAP_PROP_BUFFERSIZE)) + 1):
+            ret, frame = capture.read()
+
     if ret:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         name = f"{index}_{timestamp}"
         rgb_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         #pil_img = Image.fromarray(rgb_img)
         # name of the image (without .jpg) and absolute path
-        filename, path = saveImage(frame, SAVE_PATH, index)
+        # filename, path = saveImage(frame, SAVE_PATH, index)
         return name, rgb_img
     print("Failed to capture")
     return None, None

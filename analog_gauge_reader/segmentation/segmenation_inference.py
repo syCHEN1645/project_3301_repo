@@ -59,6 +59,41 @@ def segment_gauge_needle(image, model_path='best.pt'):
 
     return x_coords, y_coords
 
+def segment_gauge_needle_use_model(image, model):
+    results = model.predict(
+        image)  # run inference, detects gauge face and needle
+
+    # get list of detected boxes, already sorted by confidence
+    try:
+        needle_mask = results[0].masks.data[0].numpy()
+    except:
+        needle_mask = results[0].masks.data[0].cpu().numpy()
+    needle_mask_resized = cv2.resize(needle_mask,
+                                     dsize=(image.shape[1], image.shape[0]),
+                                     interpolation=cv2.INTER_NEAREST)
+
+    # scale 255 to fit into the connected component function
+    binary_mask = needle_mask_resized.astype(np.uint8) * 255
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+            binary_mask,
+            connectivity=8)
+
+    # select only the most centered to ignore noises
+    if num_labels > 1:
+        img_center = np.array([image.shape[1] / 2, image.shape[0] / 2])
+        dists = []
+        for i in range(1, num_labels):
+            centroid = centroids[i]
+            dists.append(np.linalg.norm(centroid - img_center))
+        closest = np.argmin(dists) + 1
+        cleaned_mask = (labels == closest).astype(np.uint8)
+    else:
+        cleaned_mask = binary_mask / 255
+
+    y_coords, x_coords = np.where(cleaned_mask)
+
+    return x_coords, y_coords
+
 
 def get_fitted_line(x_coords, y_coords):
     """

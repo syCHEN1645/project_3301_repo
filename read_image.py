@@ -19,13 +19,13 @@ from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODE
 # imagePath is the absolute path of the original image
 # returns:
 # data object converted from .json file
-def readImage(imageName, rgd_img, camera_index, camera_details):
-    data = runModel(imageName, rgd_img, camera_index, camera_details)
+def readImage(imageName, rgd_img, camera_index, camera_details, models):
+    data = runModel(imageName, rgd_img, camera_index, camera_details, models)
     # data = retrieveResult(imageName)
     return data
 
 
-def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_mode=True):
+def runModel(imageName, rgd_img, camera_index, camera_details, models, debug=True, eval_mode=True):
     """
     Run the gauge reading model directly on an OpenCV frame (NumPy array).
 
@@ -65,9 +65,9 @@ def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_
     # Run the full gauge-reading pipeline
     result = process_image(
         image=rgd_img,
-        detection_model_path=DETECTION_MODEL_PATH,
-        key_point_model_path=KEY_POINT_MODEL_PATH,
-        segmentation_model_path=SEGMENTATION_MODEL_PATH,
+        detection_model_path=models[0],
+        key_point_model_path=models[1],
+        segmentation_model_path=models[2],
         run_path=run_path,
         debug=debug,
         eval_mode=eval_mode,
