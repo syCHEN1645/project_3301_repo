@@ -205,7 +205,7 @@ def run_test(in_path, out_path, start_marking, end_marking, unit):
         "Good": GOOD_THRESHOLD,
         "Good number": n_good,
         "Good percent": p_good,
-        "OK": GOOD_THRESHOLD,
+        "OK": OK_THRESHOLD,
         "OK number": n_ok,
         "OK percent": p_ok,
         "Bad": "Bad",
