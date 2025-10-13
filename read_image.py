@@ -11,7 +11,7 @@ from pathlib import Path
 #     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Now import works
-from analog_gauge_reader.pipeline_v5_run import process_image
+from analog_gauge_reader.pipeline_v3 import process_image
 from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODEL_PATH, RESULT_PATH, CONFIG_CALIBRATION_PATH
 
 # params:
@@ -74,7 +74,7 @@ def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_
         start_marking=start_marking,
         end_marking=end_marking,
         unit=unit,
-        image_is_raw=False  # It's a NumPy array already
+        image_is_raw=True
     )
     return result  # dict with {'value': ..., 'unit': ...}
 

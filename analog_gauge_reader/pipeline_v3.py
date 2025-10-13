@@ -1,16 +1,14 @@
 import argparse
 import os
 import logging
-import time
 import json
-
 import cv2
 import numpy as np
 from PIL import Image
+from pathlib import Path
 
 from .plots import RUN_PATH, Plotter
 from .gauge_detection.detection_inference import detection_gauge_face
-from .ocr.ocr_inference import ocr, ocr_rotations, ocr_single_rotation, ocr_warp
 from .key_point_detection.key_point_inference import KeyPointInference, detect_key_points
 from .geometry.ellipse import fit_ellipse, cart_to_pol, get_line_ellipse_point, \
     get_point_from_angle, get_polar_angle, get_theta_middle, get_ellipse_error
@@ -21,9 +19,6 @@ from .segmentation.segmenation_inference import get_start_end_line, segment_gaug
 # pylint: disable=no-name-in-module
 # pylint: disable=no-member
 from .evaluation import constants
-
-import sys
-from pathlib import Path
 
 OCR_THRESHOLD = 0.7
 RESOLUTION = (
