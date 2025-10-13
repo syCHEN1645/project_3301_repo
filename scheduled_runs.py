@@ -1,12 +1,13 @@
 from capture_image import captureImage
 from read_image import runModel
 from send_data import sendData
-from multiprocessing import Process
+from multiprocessing import Process, set_start_method
 import time
 import sys
 import os
 import cv2
 from datetime import datetime
+import tracemalloc
 import json
 from ultralytics import YOLO
 from analog_gauge_reader.key_point_detection.key_point_inference import KeyPointInference
@@ -76,7 +77,7 @@ def postCapture(name, rgd_img, camera_index, camera_details, models):
     try:
         print("reading image")
         # data = readImage(name, rgd_img, camera_index, camera_details)
-        data = runModel(name, rgd_img, camera_index, camera_details, models)
+        data = runModel(name, rgd_img, camera_index, camera_details, models, debug=False)
         print(f"Data inferred from {camera_index}_{camera_details['camera_name']}: {data}")
         if data is None:
             print("No data returned from image processing")
@@ -113,11 +114,12 @@ def postCapture(name, rgd_img, camera_index, camera_details, models):
 
 
 def fullProcess(camera_index, camera_details, interval):
+    tracemalloc.start()
+    
+
     redirect_camera_output(camera_index, {camera_details['camera_name']})
 
     # camera_details in a dict with the format {camera_index : {configuration key value pairs}}
-    # 
-    
     print(f"Start running full process for camera {camera_index}")
     
     # capture must be declared within the process
@@ -131,6 +133,7 @@ def fullProcess(camera_index, camera_details, interval):
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     capture.set(cv2.CAP_PROP_FPS, 5)
 
+    # move model instantiation outside the loop
     print("Loading models...")
     segmentation_model = YOLO(SEGMENTATION_MODEL_PATH)
     keypoint_model = KeyPointInference(KEY_POINT_MODEL_PATH)
@@ -153,11 +156,20 @@ def fullProcess(camera_index, camera_details, interval):
                 time.sleep(2)  # <- Give the USB bus and camera time to recover
                 continue
 
-
             elapsed = time.time() - start
             sleep_time = max(0, interval - elapsed)
             print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Sleeping {sleep_time:.1f}s")
             # time.sleep(30)
+
+            # Compare to a previous snapshot to see what grew
+            current_snapshot = tracemalloc.take_snapshot()
+            if 'last_snapshot' in globals():
+                top_stats = current_snapshot.compare_to(last_snapshot, 'lineno')
+                print("\n[Memory Growth Report (Top 10)]")
+                for stat in top_stats[:10]:
+                    # This output tells you the file, line number, and size difference
+                    print(stat)
+            globals()['last_snapshot'] = current_snapshot
 
     except KeyboardInterrupt:
         print(f"Stopping camera {camera_index}_{camera_details['camera_name']} processing")
@@ -183,6 +195,9 @@ def main():
         print("Error loading the camera configuration file.")
         exit(1)
 
+    # Spawn process instead of fork
+    # set_start_method("spawn", force=True)
+    
     try:
         activeCams = scanActiveCameras()
         if not activeCams:
@@ -194,6 +209,9 @@ def main():
             p = Process(target=fullProcess, args=(camera_index, camera_dict[camera_index], interval))
             p.start()
             processes.append(p)
+        # p = Process(target=fullProcess, args=(2, camera_dict[2], interval))
+        # p.start()
+        # processes.append(p)
 
         try:
             for p in processes:
@@ -210,7 +228,7 @@ def main():
 
 
         # For now, just run the first camera (you can extend this for multiple cameras)
-        #fullProcess(activeCams[0], interval)
+        # fullProcess(activeCams[0], interval)
         
     except KeyboardInterrupt:
         print("Stop upon keyboard interrupt")
