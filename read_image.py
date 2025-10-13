@@ -1,8 +1,5 @@
-import subprocess
 import os
-import json
 import time
-import sys
 from pathlib import Path
 
 # # Dynamically add project_3301/ to sys.path
@@ -49,19 +46,6 @@ def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_
     # Convert OpenCV BGR to RGB, as expected by process_image()
     #image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-
-    start_marking = camera_details["start_marking"]
-    end_marking = camera_details["end_marking"]
-    unit = camera_details["unit"]
-    # index = (int)(imageName[0])
-    # with open(CONFIG_CALIBRATION_PATH) as f:
-    #     data = json.load(f)
-    #     for obj in data:
-    #         if obj["index"] == index:
-    #             start_marking = obj["start_marking"]
-    #             end_marking = obj["end_marking"]
-    #             unit = obj["unit"]
-    #             break
     # Run the full gauge-reading pipeline
     result = process_image(
         image=rgd_img,
@@ -71,10 +55,7 @@ def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_
         run_path=run_path,
         debug=debug,
         eval_mode=eval_mode,
-        start_marking=start_marking,
-        end_marking=end_marking,
-        unit=unit,
-        image_is_raw=False  # It's a NumPy array already
+        image_is_raw=True
     )
     return result  # dict with {'value': ..., 'unit': ...}
 
