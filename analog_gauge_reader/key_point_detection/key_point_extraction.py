@@ -25,15 +25,24 @@ def full_key_point_extraction(heatmaps, threshold=0.5, bandwidth=20):
 def extract_start_end_points(heatmap, threshold):
     # normalize heatmap to range 0, 1
     heatmap = heatmap / np.max(heatmap)
-
     coords = np.argwhere(heatmap > threshold)
+
+    # instead of compiling all points into 1 cluster, group into a few smaller clusters and choose the biggest 1
+    n_cluster = 5
+
     # swap coordinates
     coords[:, [1, 0]] = coords[:, [0, 1]]
 
-    kmeans = KMeans(n_clusters=1, n_init=3)
+    kmeans = KMeans(n_clusters=n_cluster, n_init=3)
     kmeans.fit(coords)
 
-    cluster_center = kmeans.cluster_centers_
+    labels = kmeans.labels_
+    cluster_counts = np.bincount(labels)
+    max_index = np.argmax(cluster_counts)
+    filtered_coords = coords[labels == max_index]
+
+    # cluster_center = kmeans.cluster_centers_
+    cluster_center = np.mean(filtered_coords, axis=0, keepdims=True)
 
     return cluster_center
 
