@@ -216,7 +216,9 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Start circle fitting")
 
-    circle_params = fit_circle(key_points[:, 0], key_points[:, 1])
+    # add start point and end point into key_points
+    all_key_points = np.vstack(key_point_list)
+    circle_params = fit_circle(all_key_points[:, 0], all_key_points[:, 1])
     # try:
     #     ellipse_params = cart_to_pol(coeffs)
     # except ValueError:
