@@ -16,22 +16,32 @@ def full_key_point_extraction(heatmaps, threshold=0.5, bandwidth=20):
                                                  bandwidth)
             key_point_list.append(cluster_centers)
         # start and end
-        else:
-            cluster_center = extract_start_end_points(heatmaps[i], threshold)
+        elif i == 0:
+            cluster_center = extract_start_end_points(heatmaps[i], threshold, is_start=True)
+            key_point_list.append(cluster_center)
+        elif i == 2:
+            cluster_center = extract_start_end_points(heatmaps[i], threshold, is_start=False)
             key_point_list.append(cluster_center)
     return key_point_list
 
 
-def extract_start_end_points(heatmap, threshold):
+def extract_start_end_points(heatmap, threshold, is_start):
     # normalize heatmap to range 0, 1
     heatmap = heatmap / np.max(heatmap)
     coords = np.argwhere(heatmap > threshold)
-
-    # instead of compiling all points into 1 cluster, group into a few smaller clusters and choose the biggest 1
-    n_cluster = 5
-
     # swap coordinates
     coords[:, [1, 0]] = coords[:, [0, 1]]
+
+    width, height = heatmap.shape
+    # use logic and for np array
+    if is_start:
+        mask = (coords[:, 0] <= width * 0.6) & (coords[:, 1] >= height * 0.4)
+    else:
+        mask = (coords[:, 0] >= width * 0.4) & (coords[:, 1] >= height * 0.4)
+    coords = coords[mask]
+
+    # instead of compiling all points into 1 cluster, group into a few smaller clusters and choose the biggest 1
+    n_cluster = 3
 
     kmeans = KMeans(n_clusters=n_cluster, n_init=3)
     kmeans.fit(coords)
