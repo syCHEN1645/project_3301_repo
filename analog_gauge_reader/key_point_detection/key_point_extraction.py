@@ -40,10 +40,10 @@ def extract_start_end_points(heatmap, threshold, is_start):
         mask = (coords[:, 0] >= width * 0.4) & (coords[:, 1] >= height * 0.4)
     coords = coords[mask]
 
-    # instead of compiling all points into 1 cluster, group into a few smaller clusters and choose the biggest 1
-    n_cluster = 3
+    # set number of clusters
+    n_cluster = 2
 
-    kmeans = KMeans(n_clusters=n_cluster, n_init=3)
+    kmeans = KMeans(n_clusters=n_cluster, n_init=10)
     kmeans.fit(coords)
 
     labels = kmeans.labels_
