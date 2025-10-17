@@ -3,36 +3,19 @@ import numpy as np
 # -------------Fit Circle to Points ---------------
 
 
-def fit_circle(x, y):
+def fit_circle(center, start, end):
     """
-    Circle formula:
-    x^2 + y^2 + dx + ey + f = 0
-
-    Fit the coefficients d,e,f representing a circle to the provided
-    arrays of data points x=[x1, x2, ..., xn] and y=[y1, y2, ..., yn].
-    
-    Rearrange: d * xi + e * yi + f = -(xi^2 + yi^2)
+    Estimate circle params using center point and 2 points on circle
 
     """
-    #       [x0, y0, 1]
-    # A =   [x1, y1, 1]
-    #       [x2, y2, 1]
-    A = np.vstack([x, y, np.ones(len(x))]).T
-    #       [-(x^2 + y^2)]
-    # B =   [-(x^2 + y^2)]
-    #       [-(x^2 + y^2)]
-    b = -(x**2 + y**2)
-
-    # There are more than enough points to fit
-    # Solve least squares A*[d,e,f]^T = b
-    coeffs, *_ = np.linalg.lstsq(A, b, rcond=None)
-    d, e, f = coeffs
-
-    # Convert to center and radius
-    x0 = -d/2
-    y0 = -e/2
-    r  = np.sqrt((d**2 + e**2)/4 - f)
-
+    x0 = center[0]
+    y0 = center[1]
+    c = np.array(center)
+    p1 = np.array(start)
+    p2 = np.array(end)
+    r1 = np.linalg.norm(start - center)
+    r2 = np.linalg.norm(end - center)
+    r = r1 + r2 / 2
     return x0, y0, r
 
 
