@@ -181,8 +181,8 @@ class Plotter:
         plt.savefig(path)
         # plt.show()
 
-    def plot_zero_point_circle(self, zero_point, start_end_point,
-                                circle_params, center_point=[0,0]):
+    def plot_zero_point_circle(self, zero_point, start_point,
+                               end_point, circle_params):
         """
         plot circle and points with annotations.
         points is a 2d numpy array with one point per row
@@ -194,9 +194,6 @@ class Plotter:
 
         ax.imshow(self.image)
 
-        x = start_end_point[:, 0]
-        y = start_end_point[:, 1]
-
         zero_point_color = '#41ff00'
         start_end_color = '#ff0000'
         center_point_color = '#ff00ff'
@@ -204,15 +201,10 @@ class Plotter:
         x, y = get_circle_pts(circle_params)
         plt.plot(x, y)  # plot circle
 
-        x = start_end_point[:, 0]
-        y = start_end_point[:, 1]
-        ax.scatter(x, y, c=start_end_color, s=100)  # plot start end point
-
-        x = zero_point[0]
-        y = zero_point[1]
-        ax.scatter(x, y, c=zero_point_color, s=100)  # plot start end point
-
-        ax.scatter(center_point[0], center_point[1], c=center_point_color, s=100)  # plot center point
+        ax.scatter(start_point[0], start_point[1], c=start_end_color, s=100)  # plot start point
+        ax.scatter(end_point[0], end_point[1], c=start_end_color, s=100)  # plot end point
+        ax.scatter(zero_point[0], zero_point[1], c=zero_point_color, s=100)  # plot zero point
+        ax.scatter(circle_params[0], circle_params[1], c=center_point_color, s=100)  # plot center point
 
         zero_patch = patches.Patch(color=zero_point_color, label='zero-point')
         start_end_patch = patches.Patch(color=start_end_color,

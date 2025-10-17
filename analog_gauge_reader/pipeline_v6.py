@@ -180,15 +180,15 @@ def process_image(image, detection_model_path, key_point_model_path,
     # 2: end
     center_x = (keypoints[0][0] + keypoints[0][2]) / 2
     center_y = (keypoints[0][1] + keypoints[0][3]) / 2
-    center = [center_x, center_y]
+    center = np.array([center_x, center_y])
 
     start_x = (keypoints[1][0] + keypoints[1][2]) / 2
     start_y = (keypoints[1][1] + keypoints[1][3]) / 2
-    start = [start_x, start_y]
+    start = np.array([start_x, start_y])
 
     end_x = (keypoints[2][0] + keypoints[2][2]) / 2
     end_y = (keypoints[2][1] + keypoints[2][3]) / 2
-    end = [end_x, end_y]
+    end = np.array([end_x, end_y])
 
     # ------------------Key Point Detection-------------------------
 
@@ -243,25 +243,22 @@ def process_image(image, detection_model_path, key_point_model_path,
     logging.info("Start circle fitting")
 
     circle_params = fit_circle(center, start, end)
-
-    circle_error = get_circle_error(key_points, circle_params)
-    errors["circle fit error"] = circle_error
+    # circle_error = get_circle_error([start, end], circle_params)
+    # errors["circle fit error"] = circle_error
 
     if debug:
         # plot circle
-        plotter.plot_circle(key_points, circle_params, 'key_points')
-        # plot center
-
+        plotter.plot_circle([center, start, end], circle_params, 'key_points')
 
     logging.info("Finish circle fitting")
 
     # calculate zero point
 
     # Find bottom point to set there the zero for wrap around
-    if WRAP_AROUND_FIX and start_point.shape == (1, 2) \
-        and end_point.shape == (1, 2):
-        theta_start = get_polar_angle(start_point.flatten(), circle_params)
-        theta_end = get_polar_angle(end_point.flatten(), circle_params)
+    if WRAP_AROUND_FIX and start.shape == (1, 2) \
+        and end.shape == (1, 2):
+        theta_start = get_polar_angle(start.flatten(), circle_params)
+        theta_end = get_polar_angle(end.flatten(), circle_params)
         theta_zero = get_theta_middle(theta_start, theta_end)
     else:
         bottom_middle = np.array((RESOLUTION[0] / 2, RESOLUTION[1]))
@@ -269,10 +266,7 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     zero_point = get_point_from_angle(theta_zero, circle_params)
     if debug:
-        plotter.plot_zero_point_circle(np.array(zero_point),
-                                        np.vstack((start_point, end_point)),
-                                        circle_params,
-                                        [center_x, center_y])
+        plotter.plot_zero_point_circle(np.array(zero_point), start, end, circle_params)
 
     # # ------------------OCR-------------------------
 
@@ -323,8 +317,8 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     # ------------------Project start and end points to circle-------------------------
 
-    start_point_xy = [start_point[0][0], start_point[0][1]]
-    end_point_xy = [end_point[0][0], end_point[0][1]]
+    start_point_xy = [start[0], start[1]]
+    end_point_xy = [end[0], end[1]]
     theta_start = get_polar_angle(start_point_xy, circle_params)
     theta_end = get_polar_angle(end_point_xy, circle_params)
 
