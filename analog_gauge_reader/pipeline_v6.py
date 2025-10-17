@@ -165,62 +165,74 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Finish Gauge Detection")
 
-    # ------------------Gauge Center Detection-------------------------
+    # ------------------Key Point Detection-------------------------
 
-    if debug:
-        print("-------------------")
-        print("Gauge Center Detection")
+    # if debug:
+    #     print("-------------------")
+    #     print("Key Point Detection")
 
     logging.info("Start gauge center detection")
 
     # plotting of the center point is done with the start end points
-    center_box = detect_gauge_center(cropped_resized_img)
-    center_x = (center_box[0] + center_box[2]) / 2
-    center_y = (center_box[1] + center_box[3]) / 2
+    keypoints = detect_gauge_center(cropped_resized_img)
+    # 0: center
+    # 1: start
+    # 2: end
+    center_x = (keypoints[0][0] + keypoints[0][2]) / 2
+    center_y = (keypoints[0][1] + keypoints[0][3]) / 2
+    center = [center_x, center_y]
+
+    start_x = (keypoints[1][0] + keypoints[1][2]) / 2
+    start_y = (keypoints[1][1] + keypoints[1][3]) / 2
+    start = [start_x, start_y]
+
+    end_x = (keypoints[2][0] + keypoints[2][2]) / 2
+    end_y = (keypoints[2][1] + keypoints[2][3]) / 2
+    end = [end_x, end_y]
 
     # ------------------Key Point Detection-------------------------
 
-    if debug:
-        print("-------------------")
-        print("Key Point Detection")
+    # if debug:
+    #     print("-------------------")
+    #     print("Key Point Detection")
 
-    logging.info("Start key point detection")
+    # logging.info("Start key point detection")
 
-    key_point_inferencer = KeyPointInference(key_point_model_path)
-    heatmaps = key_point_inferencer.predict_heatmaps(cropped_resized_img)
-    key_point_list = detect_key_points(heatmaps)
+    # key_point_inferencer = KeyPointInference(key_point_model_path)
+    # heatmaps = key_point_inferencer.predict_heatmaps(cropped_resized_img)
+    # key_point_list = detect_key_points(heatmaps)
 
-    key_points = key_point_list[1]
-    start_point = key_point_list[0]
-    end_point = key_point_list[2]
+    # key_points = key_point_list[1]
+    # start_point = key_point_list[0]
+    # end_point = key_point_list[2]
 
-    if eval_mode:
-        if start_point.shape == (1, 2):
-            result_full[constants.KEYPOINT_START_KEY] = {
-                'x': start_point[0][0],
-                'y': start_point[0][1]
-            }
-        else:
-            result_full[constants.KEYPOINT_START_KEY] = constants.FAILED
-        if end_point.shape == (1, 2):
-            result_full[constants.KEYPOINT_END_KEY] = {
-                'x': end_point[0][0],
-                'y': end_point[0][1]
-            }
-        else:
-            result_full[constants.KEYPOINT_END_KEY] = constants.FAILED
-        result_full[constants.KEYPOINT_NOTCH_KEY] = []
-        for point in key_points:
-            result_full[constants.KEYPOINT_NOTCH_KEY].append({
-                'x': point[0],
-                'y': point[1]
-            })
+    # if eval_mode:
+    #     if start_point.shape == (1, 2):
+    #         result_full[constants.KEYPOINT_START_KEY] = {
+    #             'x': start_point[0][0],
+    #             'y': start_point[0][1]
+    #         }
+    #     else:
+    #         result_full[constants.KEYPOINT_START_KEY] = constants.FAILED
+    #     if end_point.shape == (1, 2):
+    #         result_full[constants.KEYPOINT_END_KEY] = {
+    #             'x': end_point[0][0],
+    #             'y': end_point[0][1]
+    #         }
+    #     else:
+    #         result_full[constants.KEYPOINT_END_KEY] = constants.FAILED
+    #     result_full[constants.KEYPOINT_NOTCH_KEY] = []
+    #     for point in key_points:
+    #         result_full[constants.KEYPOINT_NOTCH_KEY].append({
+    #             'x': point[0],
+    #             'y': point[1]
+    #         })
 
-    if debug:
-        plotter.plot_heatmaps(heatmaps)
-        plotter.plot_key_points(key_point_list)
+    # if debug:
+    #     plotter.plot_heatmaps(heatmaps)
+    #     plotter.plot_key_points(key_point_list)
 
-    logging.info("Finish key point detection")
+    # logging.info("Finish key point detection")
 
     # ------------------Circle Fitting-------------------------
 
@@ -230,7 +242,7 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     logging.info("Start circle fitting")
 
-    circle_params = fit_circle(key_points[:, 0], key_points[:, 1])
+    circle_params = fit_circle(center, start, end)
 
     circle_error = get_circle_error(key_points, circle_params)
     errors["circle fit error"] = circle_error
