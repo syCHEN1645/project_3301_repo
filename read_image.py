@@ -4,14 +4,7 @@ import json
 import time
 import sys
 from pathlib import Path
-
-# # Dynamically add project_3301/ to sys.path
-# PROJECT_ROOT = Path(__file__).resolve().parents[1]
-# if str(PROJECT_ROOT) not in sys.path:
-#     sys.path.insert(0, str(PROJECT_ROOT))
-
-# Now import works
-from analog_gauge_reader.pipeline_v5_run import process_image
+from analog_gauge_reader.pipeline_v6 import process_image
 from config import DETECTION_MODEL_PATH, KEY_POINT_MODEL_PATH, SEGMENTATION_MODEL_PATH, RESULT_PATH, CONFIG_CALIBRATION_PATH
 
 # params:
