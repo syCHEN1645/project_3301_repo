@@ -248,7 +248,7 @@ def process_image(image, detection_model_path, key_point_model_path,
 
     if debug:
         # plot circle
-        plotter.plot_circle([center, start, end], circle_params, 'key_points')
+        plotter.plot_circle(np.array([center, start, end]), circle_params, 'key_points')
 
     logging.info("Finish circle fitting")
 

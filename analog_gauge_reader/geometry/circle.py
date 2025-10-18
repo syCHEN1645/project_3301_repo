@@ -12,7 +12,7 @@ def fit_circle(center, start, end):
     y0 = center[1]
     r1 = np.linalg.norm(start - center)
     r2 = np.linalg.norm(end - center)
-    r = r1 + r2 / 2
+    r = (r1 + r2) / 2
     return x0, y0, r
 
 
