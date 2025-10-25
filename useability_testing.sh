@@ -2,17 +2,17 @@
 set -e
 
 # === PARAMETERS ===
-DURATION=480      # 8 minutes
-INTERVAL=30       # seconds between captures
+DURATION=360      # 6 minutes
+INTERVAL=20       # seconds between captures
 PYTHON_ENV="/home/is307/miniforge3/envs/gauge_reader_org_clone/bin/python"
 SCRIPT="scheduled_runs.py"
 
 # === TABLE OF CAMERA CONFIG ===
 # Format: camera_index camera_name supported_resolutions
 declare -A CAMS
-CAMS[0]="brass_gauge_left 640x480 800x600 1024x768 1280x720 1600x1200 1920x1080 2048x1536 2592x1944"
-CAMS[3]="casing_gauge 640x480 1024x768 1280x720 1280x1024 1920x1080 2048x1536"
-CAMS[4]="pressure_gauge 640x480 800x600 960x540 1280x720"
+CAMS[0]="brass_gauge_left 640x480 1280x720 1920x1080 2048x1536 2592x1944"
+CAMS[3]="casing_gauge 640x480 1280x720 1920x1080 2048x1536"
+CAMS[4]="pressure_gauge 640x480 1280x720"
 
 # === Ensure required folders exist ===
 mkdir -p logs

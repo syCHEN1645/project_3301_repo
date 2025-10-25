@@ -1,111 +1,125 @@
+#!/usr/bin/env python3
+import os
 import re
+import statistics
 import numpy as np
 from datetime import datetime
-from collections import defaultdict
-from pathlib import Path
-import argparse
-import math
 
-# === REGEX PATTERN ===
-camera_line = re.compile(
-    r"Cam(\d+),\s*(\d+)x(\d+)\s+\S+\s+stream:\s*([\d\.]+)\s*Mbps"
-)
+LOG_DIR = "logs"
+STATS_DIR = "stats"
+os.makedirs(STATS_DIR, exist_ok=True)
 
-def parse_log(filepath):
-    """Extract camera bandwidth info from a single log file."""
-    data = defaultdict(list)
-    with open(filepath, "r") as f:
-        for line in f:
-            m = camera_line.search(line)
-            if m:
-                cam_id = m.group(1)
-                width, height = int(m.group(2)), int(m.group(3))
-                mbps = float(m.group(4))
-                key = f"Camera {cam_id} ({width}x{height})"
-                data[key].append(mbps)
-    return data
+def summarize(values, label, units=""):
+    """Compute count, mean, quartiles, and IQR summary text."""
+    if not values:
+        return f"\n=== {label} ===\nNo data found.\n"
+    q25, q50, q75 = np.percentile(values, [25, 50, 75])
+    iqr = q75 - q25
+    lines = [
+        f"\n=== {label} ===",
+        f"Count : {len(values)}",
+        f"Mean  : {statistics.mean(values):.4f}{units}",
+        f"Min   : {min(values):.4f}{units}",
+        f"25%   : {q25:.4f}{units}",
+        f"50%   : {q50:.4f}{units}",
+        f"75%   : {q75:.4f}{units}",
+        f"Max   : {max(values):.4f}{units}",
+        f"IQR   : {iqr:.4f}{units}",
+    ]
+    return "\n".join(lines) + "\n"
 
-def summarize(values):
-    """Compute key statistics for a list of values."""
-    arr = np.array(values)
-    q1, q2, q3 = np.percentile(arr, [25, 50, 75])
-    stats = {
-        "count": len(arr),
-        "mean": np.mean(arr),
-        "min": np.min(arr),
-        "q1": q1,
-        "median": q2,
-        "q3": q3,
-        "max": np.max(arr),
-        "iqr": q3 - q1,
+def analyse_log(file_path):
+    """Parse a single log file and extract key metrics."""
+    data = {
+        "bandwidth": [],
+        "width": [],
+        "height": [],
+        "fps": [],
+        "elapsed": [],
+        "reading": [],
+        "camera_name": None,
     }
 
-    # === Camera support estimation (floored integers) ===
-    stats["min_supported"] = math.floor(240 / stats["max"]) if stats["max"] > 0 else 0
-    stats["max_supported"] = math.floor(320 / stats["min"]) if stats["min"] > 0 else 0
+    with open(file_path) as f:
+        for line in f:
+            # Camera name
+            cam_match = re.search(r"Cam(\d+)", line)
+            if cam_match and not data["camera_name"]:
+                data["camera_name"] = cam_match.group(1)
 
-    return stats
+            # Resolution
+            wh_match = re.search(r"(\d+)x(\d+)", line)
+            if wh_match:
+                data["width"].append(int(wh_match.group(1)))
+                data["height"].append(int(wh_match.group(2)))
 
-def summarize_to_text(stats):
-    """Format one stats dictionary into readable text."""
-    return (
-        f"Count : {stats['count']}\n"
-        f"Mean  : {stats['mean']:.2f} Mbps\n"
-        f"Min   : {stats['min']:.2f} Mbps\n"
-        f"Q1    : {stats['q1']:.2f} Mbps\n"
-        f"Median: {stats['median']:.2f} Mbps\n"
-        f"Q3    : {stats['q3']:.2f} Mbps\n"
-        f"Max   : {stats['max']:.2f} Mbps\n"
-        f"IQR   : {stats['iqr']:.2f} Mbps\n"
-        f"Estimated Supported Cameras:\n"
-        f"   • Minimum (240 / Max Mbps): {stats['min_supported']} cameras\n"
-        f"   • Maximum (320 / Min Mbps): {stats['max_supported']} cameras\n"
-    )
+            # Bandwidth (Mbps)
+            bw_match = re.search(r"stream:\s*([\d\.]+)\s*Mbps", line)
+            if bw_match:
+                data["bandwidth"].append(float(bw_match.group(1)))
+
+            # FPS
+            fps_match = re.search(r"Frames per second:\s*([\d\.]+)", line)
+            if fps_match:
+                data["fps"].append(float(fps_match.group(1)))
+
+            # Time elapsed
+            elapsed_match = re.search(r"time elapsed:\s*([\d\.]+)\s*seconds", line)
+            if elapsed_match:
+                data["elapsed"].append(float(elapsed_match.group(1)))
+
+            # Final reading
+            reading_match = re.search(r"Final reading is:\s*([-+]?\d*\.?\d+)", line)
+            if reading_match:
+                data["reading"].append(float(reading_match.group(1)))
+
+    return data
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Analyze a single Jetson camera log file for Mbps statistics and estimate supported camera count."
-    )
-    parser.add_argument(
-        "filename",
-        help="Name of the log file inside the logs/ directory (e.g. camera_3_run1.txt)",
-    )
+    import argparse
+    parser = argparse.ArgumentParser(description="Analyze camera bandwidth, FPS, elapsed time, and readings from logs")
+    parser.add_argument("logfile", help="Log file name (inside logs/)")
     args = parser.parse_args()
 
-    # Use script-relative directories
-    BASE_DIR = Path(__file__).resolve().parent
-    LOG_DIR = BASE_DIR / "logs"
-    STATS_DIR = BASE_DIR / "stats"
-    STATS_DIR.mkdir(parents=True, exist_ok=True)
-
-    log_path = LOG_DIR / args.filename
-    if not log_path.exists():
-        print(f"❌ Log file not found: {log_path}")
+    file_path = os.path.join(LOG_DIR, args.logfile)
+    if not os.path.exists(file_path):
+        print(f"❌ Log file not found: {file_path}")
         return
 
-    output_file = STATS_DIR / f"{log_path.stem}_bandwidth_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-
-    data = parse_log(log_path)
-    if not data:
-        print(f"⚠️ No camera data found in {log_path.name}")
+    data = analyse_log(file_path)
+    if not data["bandwidth"]:
+        print("⚠️ No bandwidth data found in log.")
         return
 
-    report = [
-        f"=== Camera Bandwidth Summary ===",
-        f"Generated: {datetime.now()}",
-        f"Source log: {log_path.name}\n",
-    ]
+    # Estimate supported cameras (USB bandwidth model)
+    max_mbps = max(data["bandwidth"])
+    min_mbps = min(data["bandwidth"])
+    min_supported = int(240 // max_mbps)
+    max_supported = int(320 // min_mbps)
 
-    for cam, values in data.items():
-        stats = summarize(values)
-        report.append(f"--- {cam} ---\n" + summarize_to_text(stats))
+    # Build report
+    report = []
+    report.append("=== Camera Bandwidth, FPS & Reading Analysis ===")
+    report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report.append(f"Source: {args.logfile}")
 
-    summary_text = "\n".join(report)
-    print(summary_text)
+    report.append(summarize(data["bandwidth"], "Bandwidth (Mbps)", " Mbps"))
+    report.append(summarize(data["fps"], "Frame Rate (FPS)", " FPS"))
+    report.append(summarize(data["elapsed"], "Time Elapsed per Cycle", " s"))
+    report.append(summarize(data["reading"], "Final Reading", " kg/cm³"))
+    report.append(summarize(data["width"], "Frame Width", " px"))
+    report.append(summarize(data["height"], "Frame Height", " px"))
+    report.append(f"\nEstimated supported cameras: {min_supported}–{max_supported}")
 
+    # Save report
+    output_file = os.path.join(
+        STATS_DIR,
+        f"{os.path.splitext(args.logfile)[0]}_bandwidth_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+    )
     with open(output_file, "w") as f:
-        f.write(summary_text)
+        f.write("\n".join(report))
 
+    print("\n".join(report))
     print(f"\n✅ Summary saved to: {output_file}")
 
 if __name__ == "__main__":

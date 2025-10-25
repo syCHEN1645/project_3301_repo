@@ -1,0 +1,64 @@
+=== Camera Bandwidth, FPS & Reading Analysis ===
+Generated: 2025-10-26 01:26:36
+Source: subprocess_output_3_casing_gauge_1920_1080.log
+
+=== Bandwidth (Mbps) ===
+Count : 17
+Mean  : 18.1012 Mbps
+Min   : 14.2200 Mbps
+25%   : 15.9600 Mbps
+50%   : 17.3000 Mbps
+75%   : 19.7600 Mbps
+Max   : 23.5500 Mbps
+IQR   : 3.8000 Mbps
+
+
+=== Frame Rate (FPS) ===
+Count : 17
+Mean  : 30.0000 FPS
+Min   : 30.0000 FPS
+25%   : 30.0000 FPS
+50%   : 30.0000 FPS
+75%   : 30.0000 FPS
+Max   : 30.0000 FPS
+IQR   : 0.0000 FPS
+
+
+=== Time Elapsed per Cycle ===
+Count : 18
+Mean  : 3.0227 s
+Min   : 2.6206 s
+25%   : 2.8353 s
+50%   : 2.8855 s
+75%   : 2.9192 s
+Max   : 5.2962 s
+IQR   : 0.0838 s
+
+
+=== Final Reading ===
+No data found.
+
+
+=== Frame Width ===
+Count : 17
+Mean  : 1920.0000 px
+Min   : 1920.0000 px
+25%   : 1920.0000 px
+50%   : 1920.0000 px
+75%   : 1920.0000 px
+Max   : 1920.0000 px
+IQR   : 0.0000 px
+
+
+=== Frame Height ===
+Count : 17
+Mean  : 1080.0000 px
+Min   : 1080.0000 px
+25%   : 1080.0000 px
+50%   : 1080.0000 px
+75%   : 1080.0000 px
+Max   : 1080.0000 px
+IQR   : 0.0000 px
+
+
+Estimated supported cameras: 10–22

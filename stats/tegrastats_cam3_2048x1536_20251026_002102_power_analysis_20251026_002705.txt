@@ -1,0 +1,84 @@
+=== Jetson Power & Thermal Statistics Report ===
+Generated: 2025-10-26 00:27:05
+Source log: logs/tegrastats_cam3_2048x1536_20251026_002102.log
+
+
+=== Total Power (VDD_IN) ===
+Count : 359
+Mean  : 7777.40 mW
+Median: 7159.00 mW
+Min   : 7078.00 mW
+Max   : 14911.00 mW
+Stdev : 1474.94 mW
+
+
+=== CPU/GPU Power (VDD_CPU_GPU_CV) ===
+Count : 359
+Mean  : 1259.08 mW
+Median: 726.00 mW
+Min   : 686.00 mW
+Max   : 7291.00 mW
+Stdev : 1251.49 mW
+
+
+=== SoC Power (VDD_SOC) ===
+Count : 359
+Mean  : 2697.55 mW
+Median: 2665.00 mW
+Min   : 2665.00 mW
+Max   : 3094.00 mW
+Stdev : 77.25 mW
+
+
+=== CPU Temperature ===
+Count : 359
+Mean  : 61.51 °C
+Median: 61.19 °C
+Min   : 60.78 °C
+Max   : 66.53 °C
+Stdev : 0.93 °C
+
+
+=== GPU Temperature ===
+Count : 359
+Mean  : 58.13 °C
+Median: 58.03 °C
+Min   : 57.56 °C
+Max   : 59.41 °C
+Stdev : 0.34 °C
+
+
+=== Tj (Junction) Temperature ===
+Count : 359
+Mean  : 62.63 °C
+Median: 62.50 °C
+Min   : 62.19 °C
+Max   : 66.53 °C
+Stdev : 0.61 °C
+
+
+=== SoC Temperature ===
+Count : 359
+Mean  : 57.56 °C
+Median: 57.38 °C
+Min   : 57.12 °C
+Max   : 60.06 °C
+Stdev : 0.49 °C
+
+
+=== CV Core Temperature ===
+Count : 359
+Mean  : 58.77 °C
+Median: 58.44 °C
+Min   : 58.06 °C
+Max   : 63.50 °C
+Stdev : 0.92 °C
+
+
+=== Average CPU Utilization ===
+Count : 359
+Mean  : 7.94 %
+Median: 0.75 %
+Min   : 0.25 %
+Max   : 74.38 %
+Stdev : 16.80 %

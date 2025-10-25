@@ -1,0 +1,71 @@
+=== Camera Bandwidth, FPS & Reading Analysis ===
+Generated: 2025-10-26 01:29:56
+Source: subprocess_output_4_paper_gauge_lower_1280_720.log
+
+=== Bandwidth (Mbps) ===
+Count : 17
+Mean  : 18.3024 Mbps
+Min   : 15.4000 Mbps
+25%   : 16.3600 Mbps
+50%   : 17.7600 Mbps
+75%   : 20.1400 Mbps
+Max   : 24.7100 Mbps
+IQR   : 3.7800 Mbps
+
+
+=== Frame Rate (FPS) ===
+Count : 17
+Mean  : 30.0000 FPS
+Min   : 30.0000 FPS
+25%   : 30.0000 FPS
+50%   : 30.0000 FPS
+75%   : 30.0000 FPS
+Max   : 30.0000 FPS
+IQR   : 0.0000 FPS
+
+
+=== Time Elapsed per Cycle ===
+Count : 18
+Mean  : 7.7620 s
+Min   : 7.2060 s
+25%   : 7.3346 s
+50%   : 7.6017 s
+75%   : 7.8192 s
+Max   : 10.2775 s
+IQR   : 0.4846 s
+
+
+=== Final Reading ===
+Count : 18
+Mean  : -8.5750 kg/cm³
+Min   : -81.0740 kg/cm³
+25%   : -1.4327 kg/cm³
+50%   : -0.2895 kg/cm³
+75%   : 1.5003 kg/cm³
+Max   : 3.4826 kg/cm³
+IQR   : 2.9330 kg/cm³
+
+
+=== Frame Width ===
+Count : 17
+Mean  : 1280.0000 px
+Min   : 1280.0000 px
+25%   : 1280.0000 px
+50%   : 1280.0000 px
+75%   : 1280.0000 px
+Max   : 1280.0000 px
+IQR   : 0.0000 px
+
+
+=== Frame Height ===
+Count : 17
+Mean  : 720.0000 px
+Min   : 720.0000 px
+25%   : 720.0000 px
+50%   : 720.0000 px
+75%   : 720.0000 px
+Max   : 720.0000 px
+IQR   : 0.0000 px
+
+
+Estimated supported cameras: 9–20

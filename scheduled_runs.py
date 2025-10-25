@@ -16,20 +16,20 @@ from send_data import sendData
 
 
 # === Logging helpers ===
-def redirect_camera_output(cam_index, camera_name):
+def redirect_camera_output(cam_index, camera_name, width, height):
     os.makedirs("logs", exist_ok=True)
-    log_filename = f"logs/camera_output_{cam_index}_{camera_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    log_filename = f"logs/camera_output_{cam_index}_{camera_name}_{width}_{height}.log"
     log_file = open(log_filename, "a")
     sys.stdout = log_file
     sys.stderr = log_file
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
-    print(f"[{datetime.now()}] Logging started for camera {cam_index}_{camera_name}")
+    print(f"[{datetime.now()}] Logging started for camera {cam_index}_{camera_name}_{width}_{height}")
 
 
-def redirect_subprocess_output(cam_index, camera_name):
+def redirect_subprocess_output(cam_index, camera_name, width, height):
     os.makedirs("logs", exist_ok=True)
-    log_filename = f"logs/subprocess_output_{cam_index}_{camera_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    log_filename = f"logs/subprocess_output_{cam_index}_{camera_name}_{width}_{height}.log"
     log_file = open(log_filename, "a")
     sys.stdout = log_file
     sys.stderr = log_file
@@ -58,6 +58,7 @@ def scanActiveCameras():
 def get_mjpg_frame_info(dev_path):
     cmd = ["v4l2-ctl", f"--device={dev_path}", "--get-fmt-video", "--get-parm"]
     out = subprocess.check_output(cmd, text=True)
+    print(out.strip())
     w = int(re.search(r"Width/Height\s*:\s*(\d+)/(\d+)", out).group(1))
     h = int(re.search(r"Width/Height\s*:\s*(\d+)/(\d+)", out).group(2))
     size = int(re.search(r"Size Image\s*:\s*(\d+)", out).group(1))
@@ -66,8 +67,8 @@ def get_mjpg_frame_info(dev_path):
 
 
 # === Post-processing ===
-def postCapture(name, frame, camera_index, camera_details):
-    redirect_subprocess_output(camera_index, camera_details['camera_name'])
+def postCapture(name, frame, camera_index, camera_details, width, height):
+    redirect_subprocess_output(camera_index, camera_details['camera_name'], width, height)
     try:
         print("Running model inference...")
         data = runModel(name, frame, camera_index, camera_details)
@@ -90,10 +91,11 @@ def postCapture(name, frame, camera_index, camera_details):
 
 # === Main capture loop ===
 def fullProcess(camera_index, camera_details, interval, width, height, duration):
-    redirect_camera_output(camera_index, camera_details['camera_name'])
+    redirect_camera_output(camera_index, camera_details['camera_name'], width, height)
     print(f"Starting full process for camera {camera_index} ({width}x{height})")
 
     capture = cv2.VideoCapture(camera_index)
+    time.sleep(1)
     if not capture.isOpened():
         print(f"Failed to open camera {camera_index}")
         return
@@ -126,8 +128,9 @@ def fullProcess(camera_index, camera_details, interval, width, height, duration)
             print(f"[{timestamp}] Cam{camera_index}, {width_now}x{height_now} {fourcc} stream: "
                   f"{bandwidth:.2f} Mbps (MJPG ≈ {len(encoded)/1024:.1f} KB) time={frame_time:.3f}s")
 
-            postCapture(name, frame, camera_index, camera_details)
+            postCapture(name, frame, camera_index, camera_details, width, height)
             elapsed = time.time() - t0
+            print(f"time elapsed: {elapsed} seconds")
             sleep_time = max(0, interval - elapsed)
             print(f"[{datetime.now()}] Sleeping {sleep_time:.2f}s\n")
             time.sleep(sleep_time)
