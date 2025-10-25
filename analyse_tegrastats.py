@@ -1,15 +1,33 @@
+#!/usr/bin/env python3
 import os
 import re
 import statistics
+import sys
 from datetime import datetime
 
-# === CONFIGURATION ===
-LOG_FILE = "power_stat_archive/power_log_1camera.txt"
-OUTPUT_DIR = "power_stat_archive"
-OUTPUT_FILE = f"{OUTPUT_DIR}/power_log_1camera_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+# === Accept CLI argument ===
+if len(sys.argv) < 2:
+    print("Usage: analyse_power_stats.py <log_file>")
+    sys.exit(1)
 
-# Ensure output directory exists
+LOG_FILE = sys.argv[1]
+
+# Allow passing just filename or full path
+if not os.path.exists(LOG_FILE):
+    LOG_FILE = os.path.join("logs", LOG_FILE)
+if not os.path.exists(LOG_FILE):
+    print(f"❌ Log file not found: {LOG_FILE}")
+    sys.exit(1)
+
+# === OUTPUT SETUP ===
+OUTPUT_DIR = "stats"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+base = os.path.basename(LOG_FILE)
+OUTPUT_FILE = os.path.join(
+    OUTPUT_DIR,
+    f"{os.path.splitext(base)[0]}_power_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+)
 
 # === REGEX PATTERNS ===
 patterns = {
@@ -78,7 +96,6 @@ def main():
     summary_text = "\n".join(report)
     print(summary_text)
 
-    # Save report to file
     with open(OUTPUT_FILE, "w") as f:
         f.write(summary_text)
 

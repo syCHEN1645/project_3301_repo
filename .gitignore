@@ -5,7 +5,7 @@ processed_results/
 logs*/
 config_calibration.json
 captured_images_archive/
-*archive/
+*archive*/
 config.py
 *.jpg
 *.json
