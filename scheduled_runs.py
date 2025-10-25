@@ -10,6 +10,8 @@ from datetime import datetime
 import json
 from config import verify_model_files, CAPTURE_INTERVAL
 import random
+import fcntl, struct
+import subprocess, re
 
 # Add project root to sys.path for absolute imports
 # sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -21,6 +23,9 @@ def redirect_camera_output(cam_index, camera_name):
     log_file = open(log_filename, "a")
     sys.stdout = log_file
     sys.stderr = log_file
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+
     print(f"[{datetime.now()}] Logging started for camera {cam_index}_{camera_name}")
 
 def redirect_subprocess_output(cam_index, camera_name):
@@ -30,6 +35,9 @@ def redirect_subprocess_output(cam_index, camera_name):
     log_file = open(log_filename, "a")
     sys.stdout = log_file
     sys.stderr = log_file
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+
     print(f"[{datetime.now()}] Logging started for postCapture of camera {cam_index}_{camera_name}")
 
 
@@ -111,6 +119,44 @@ def postCapture(name, rgd_img, camera_index, camera_details):
     #    deleteData(name, path)
 
 
+# def get_mjpg_frame_info(dev_path):
+#     """
+#     Query the V4L2 driver for current MJPG stream info:
+#     returns (width, height, size_bytes, fourcc_string)
+#     """
+#     # Define V4L2 constants (avoid external deps)
+#     VIDIOC_G_FMT = 0xC0CC5604
+#     V4L2_BUF_TYPE_VIDEO_CAPTURE = 1
+
+#     # Structure of v4l2_format (simplified)
+#     fmt = struct.pack("I", V4L2_BUF_TYPE_VIDEO_CAPTURE) + bytes(200)
+#     fd = os.open(dev_path, os.O_RDWR)
+#     try:
+#         fmt = fcntl.ioctl(fd, VIDIOC_G_FMT, fmt)
+#         # Offsets are from the v4l2_format struct (32-bit kernel ABI)
+#         pix = fmt[8:8+200]
+#         width, height, pixelformat, field, bytesperline, \
+#             sizeimage, colorspace = struct.unpack_from("II4sIIII", pix)
+#         fourcc = pixelformat.decode(errors='ignore')
+#         return width, height, sizeimage, fourcc
+#     finally:
+#         os.close(fd)
+
+
+
+def get_mjpg_frame_info(dev_path):
+    cmd = ["v4l2-ctl", f"--device={dev_path}", "--get-fmt-video", "--get-parm"]
+    # cmd = ["v4l2-ctl", f"--device={dev_path}", "--all"]
+    out = subprocess.check_output(cmd, text=True)
+    print(out.strip())
+    w = int(re.search(r"Width/Height\s*:\s*(\d+)/(\d+)", out).group(1))
+    h = int(re.search(r"Width/Height\s*:\s*(\d+)/(\d+)", out).group(2))
+    size = int(re.search(r"Size Image\s*:\s*(\d+)", out).group(1))
+    fourcc = re.search(r"Pixel Format\s*:\s*'(\w+)'", out).group(1)
+    return w, h, size, fourcc
+
+
+
 def fullProcess(camera_index, camera_details, interval):
     redirect_camera_output(camera_index, {camera_details['camera_name']})
 
@@ -125,11 +171,17 @@ def fullProcess(camera_index, camera_details, interval):
         return
 
     capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    # capture.set(cv2.CAP_PROP_FRAME_WIDTH, 680)
-    # capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
-    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1080)
-    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 840)
-    capture.set(cv2.CAP_PROP_FPS, 5)
+    # # capture.set(cv2.CAP_PROP_FRAME_WIDTH, 680)
+    # # capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1024)
+    # capture.set(cv2.CAP_PROP_FPS, 5)
+
+    dev_path = f"/dev/video{camera_index}"
+    # width, height, mjpg_bytes, fourcc = get_mjpg_frame_info(dev_path)
+    # print(f"[Cam{camera_index}] {width}x{height} {fourcc} stream, "
+    #     f"driver buffer size ≈ {mjpg_bytes/1024:.1f} KB")
+
 
     show_feed = True
 
@@ -138,16 +190,39 @@ def fullProcess(camera_index, camera_details, interval):
             start = time.time()
             name, frame = captureImage(capture, camera_index)
             if frame is not None:
-                # --- NEW: show the frame ---
-                if show_feed:
-                    preview = frame.copy()
-                    cv2.putText(preview, f"Cam {camera_index}", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                    cv2.imshow(f"Camera {camera_index}", preview)
-                    # Press 'q' to close this display
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        show_feed = False
-                        cv2.destroyWindow(f"Camera {camera_index}")
+                frame_time_s = time.time() - start        # elapsed capture time
+                width, height, mjpg_bytes, fourcc = get_mjpg_frame_info(dev_path)
+                success, encoded = cv2.imencode('.jpg', frame)
+                if success:
+                    bandwidth_mbps = (len(encoded) * 8 / 1e6) / frame_time_s
+                else:
+                    bandwidth_mbps = 0
+                    print("Error in encoding frame")
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"[{timestamp}] Cam{camera_index}, {width}x{height} {fourcc} stream: {bandwidth_mbps:.2f} Mbps (MJPG ≈ {len(encoded)/1024:.1f} KB) time = {frame_time_s}")
+
+                # frame_time_s = time.time() - start        # elapsed capture time
+                # success, encoded = cv2.imencode('.jpg', frame)
+                # if success:
+                #     bandwidth_mbps = (len(encoded) * 8 / 1e6) / frame_time_s
+                # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # print(f"[{timestamp}] Cam{camera_index}: {bandwidth_mbps:.2f} Mbps, size: {(len(encoded) * 8 / 1e6)} Mb")
+
+                # frame_time_s = time.time() - start        # elapsed capture time
+                # bandwidth_mbps = (len(frame) * 8 / 1e6) / frame_time_s
+                # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # print(f"[{timestamp}] Cam{camera_index}: {bandwidth_mbps:.2f} Mbps, size: {(len(frame) * 8 / 1e6)} Mb")
+
+                # # --- NEW: show the frame ---
+                # if show_feed:
+                #     preview = frame.copy()
+                #     cv2.putText(preview, f"Cam {camera_index}", (10, 30),
+                #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                #     cv2.imshow(f"Camera {camera_index}", preview)
+                #     # Press 'q' to close this display
+                #     if cv2.waitKey(1) & 0xFF == ord('q'):
+                #         show_feed = False
+                #         cv2.destroyWindow(f"Camera {camera_index}")
                 postCapture(name, frame, camera_index, camera_details)
                 print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Data processed successfully")
 
@@ -195,9 +270,10 @@ def main():
         
         processes = []
         for camera_index in activeCams:
-            p = Process(target=fullProcess, args=(camera_index, camera_dict[camera_index], interval))
-            p.start()
-            processes.append(p)
+            if camera_index == 3: # included for testing purposes
+                p = Process(target=fullProcess, args=(camera_index, camera_dict[camera_index], interval))
+                p.start()
+                processes.append(p)
 
         try:
             for p in processes:
