@@ -12,3 +12,4 @@ config.py
 test_cv_local/
 analog_gauge_reader/__pycache__/pipeline_v3.cpython-38.pyc
 model_training/
+test_output_*/
