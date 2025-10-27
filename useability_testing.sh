@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-DURATION=360        # 6 minutes
-INTERVAL=20         # seconds between captures
+DURATION=480        # 6 minutes
+INTERVAL=40         # seconds between captures
 WIDTH=1280
 HEIGHT=720
 PYTHON_ENV="/home/is307/miniforge3/envs/gauge_reader_org_clone/bin/python"
@@ -12,10 +12,12 @@ mkdir -p logs stats plots
 
 # === Define test stages ===
 declare -a TESTS=(
-  "0"
   "0 2"
-  "0 2 5"
 )
+  # "0 "
+  # "0 2 "
+  # "0 2 3"
+  # "0 2 3 5"
 
 for cams in "${TESTS[@]}"; do
   echo "🚀 Running test with cameras: $cams at ${WIDTH}x${HEIGHT}"
