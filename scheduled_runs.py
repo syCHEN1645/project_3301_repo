@@ -139,15 +139,15 @@ def fullProcess(camera_index, camera_details, interval):
             name, frame = captureImage(capture, camera_index)
             if frame is not None:
                 # --- NEW: show the frame ---
-                if show_feed:
-                    preview = frame.copy()
-                    cv2.putText(preview, f"Cam {camera_index}", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                    cv2.imshow(f"Camera {camera_index}", preview)
-                    # Press 'q' to close this display
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        show_feed = False
-                        cv2.destroyWindow(f"Camera {camera_index}")
+                # if show_feed:
+                    # preview = frame.copy()
+                    # cv2.putText(preview, f"Cam {camera_index}", (10, 30),
+                    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    # cv2.imshow(f"Camera {camera_index}", preview)
+                    # # Press 'q' to close this display
+                    # if cv2.waitKey(1) & 0xFF == ord('q'):
+                    #     show_feed = False
+                    #     cv2.destroyWindow(f"Camera {camera_index}")
                 postCapture(name, frame, camera_index, camera_details)
                 print(f"[{datetime.now()}] Camera {camera_index}_{camera_details['camera_name']}: Data processed successfully")
 
