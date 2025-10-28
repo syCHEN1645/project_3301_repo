@@ -106,12 +106,12 @@ def fullProcess(cam_index, cam_details, interval, width, height, duration):
             bandwidth = (len(encoded) * 8 / 1e6) / frame_time if success else 0
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{timestamp}] Cam{cam_index}, {width_now}x{height_now} {fourcc}: "
+            print(f"[{timestamp}] Cam{cam_index}, {width_now}x{height_now} {fourcc} stream: "
                   f"{bandwidth:.2f} Mbps ({len(encoded)/1024:.1f} KB) time={frame_time:.3f}s")
 
             postCapture(name, frame, cam_index, cam_details, width, height)
             elapsed = time.time() - t0
-            print(f"time elapsed: {elapsed:.2f}s")
+            print(f"time elapsed: {elapsed:.2f} seconds")
             time.sleep(max(0, interval - elapsed))
     except KeyboardInterrupt:
         pass
