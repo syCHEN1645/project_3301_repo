@@ -11,8 +11,8 @@ INPUT_PATH = "test_cv_local/inputs/"
 OUTPUT_PATH = "test_cv_local/outputs/"
 ANALYSIS_FILE_NAME = "analysis.txt"
 CV_RESULT_FILE_NAME = "result.json"
-GOOD_THRESHOLD = 2
-OK_THRESHOLD = 5
+GOOD_THRESHOLD = 1.6
+OK_THRESHOLD = 3
 PATITION = "========================================================="
 
 def main():
@@ -208,7 +208,7 @@ def run_test(in_path, out_path, start_marking, end_marking, unit):
         "Good": GOOD_THRESHOLD,
         "Good number": n_good,
         "Good percent": p_good,
-        "OK": GOOD_THRESHOLD,
+        "OK": OK_THRESHOLD,
         "OK number": n_ok,
         "OK percent": p_ok,
         "Bad": "Bad",
