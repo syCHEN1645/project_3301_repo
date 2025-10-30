@@ -18,7 +18,7 @@ def readImage(imageName, rgd_img, camera_index, camera_details):
     return data
 
 
-def runModel(imageName, rgd_img, camera_index, camera_details, debug=True, eval_mode=True):
+def runModel(imageName, rgd_img, camera_index, camera_details, debug=False, eval_mode=True):
     """
     Run the gauge reading model directly on an OpenCV frame (NumPy array).
 
