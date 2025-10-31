@@ -8,7 +8,6 @@ import json
 import subprocess
 import re
 from datetime import datetime
-from multiprocessing import Process
 from config import verify_model_files, CAPTURE_INTERVAL
 from capture_image import captureImage
 from read_image import runModel
@@ -52,7 +51,7 @@ def get_mjpg_frame_info(dev_path):
 
 # === Post-processing ===
 def postCapture(name, frame, cam_index, cam_details, width, height):
-    redirect_subprocess_output(cam_index, cam_details['camera_name'], width, height)
+    redirect_subprocess_output(cam_index, cam_details["camera_name"], width, height)
     try:
         print("Running model inference...")
         data = runModel(name, frame, cam_index, cam_details)
@@ -65,7 +64,7 @@ def postCapture(name, frame, cam_index, cam_details, width, height):
             "gauge": cam_details["gauge_name"],
             "reading": data["value"],
             "unit": data["unit"],
-            "sensor_name": cam_details["sensor_name"]
+            "sensor_name": cam_details["sensor_name"],
         }
         sendData(payload)
         print(f"✅ Data processed for {cam_index}_{cam_details['camera_name']}")
@@ -73,9 +72,9 @@ def postCapture(name, frame, cam_index, cam_details, width, height):
         print(f"Error in postCapture: {e}")
 
 
-# === Capture loop per camera ===
+# === Capture loop per camera (sequential) ===
 def fullProcess(cam_index, cam_details, interval, width, height, duration):
-    redirect_camera_output(cam_index, cam_details['camera_name'], width, height)
+    redirect_camera_output(cam_index, cam_details["camera_name"], width, height)
     print(f"Starting full process for camera {cam_index} ({width}x{height})")
 
     cap = cv2.VideoCapture(cam_index)
@@ -84,7 +83,7 @@ def fullProcess(cam_index, cam_details, interval, width, height, duration):
         print(f"Failed to open camera {cam_index}")
         return
 
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
@@ -92,27 +91,27 @@ def fullProcess(cam_index, cam_details, interval, width, height, duration):
     start_time = time.time()
 
     try:
-        while time.time() - start_time < duration:
-            t0 = time.time()
-            name, frame = captureImage(cap, cam_index)
-            if frame is None:
-                print(f"[{datetime.now()}] Camera {cam_index}: Failed to capture frame.")
-                time.sleep(2)
-                continue
+        
+        t0 = time.time()
+        name, frame = captureImage(cap, cam_index)
+        if frame is None:
+            print(f"[{datetime.now()}] Camera {cam_index}: Failed to capture frame.")
+            time.sleep(2)
+            return
 
-            frame_time = time.time() - t0
-            width_now, height_now, _, fourcc = get_mjpg_frame_info(dev_path)
-            success, encoded = cv2.imencode('.jpg', frame)
-            bandwidth = (len(encoded) * 8 / 1e6) / frame_time if success else 0
+        frame_time = time.time() - t0
+        width_now, height_now, _, fourcc = get_mjpg_frame_info(dev_path)
+        success, encoded = cv2.imencode(".jpg", frame)
+        bandwidth = (len(encoded) * 8 / 1e6) / frame_time if success else 0
 
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{timestamp}] Cam{cam_index}, {width_now}x{height_now} {fourcc} stream: "
-                  f"{bandwidth:.2f} Mbps ({len(encoded)/1024:.1f} KB) time={frame_time:.3f}s")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] Cam{cam_index}, {width_now}x{height_now} {fourcc} stream: "
+                f"{bandwidth:.2f} Mbps ({len(encoded)/1024:.1f} KB) time={frame_time:.3f}s")
 
-            postCapture(name, frame, cam_index, cam_details, width, height)
-            elapsed = time.time() - t0
-            print(f"time elapsed: {elapsed:.2f} seconds")
-            time.sleep(max(0, interval - elapsed))
+        postCapture(name, frame, cam_index, cam_details, width, height)
+        elapsed = time.time() - t0
+        print(f"time elapsed: {elapsed:.2f} seconds")
+        #time.sleep(max(0, interval - elapsed))
     except KeyboardInterrupt:
         pass
     finally:
@@ -121,12 +120,13 @@ def fullProcess(cam_index, cam_details, interval, width, height, duration):
         print(f"Camera {cam_index} stopped.")
 
 
+# === Main (Sequential across cameras) ===
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cameras", nargs="+", type=int, required=True, help="Camera indices (e.g. 0 2 4)")
     parser.add_argument("--width", type=int, required=True)
     parser.add_argument("--height", type=int, required=True)
-    parser.add_argument("--duration", type=int, default=480)
+    parser.add_argument("--total_duration", type=int, default=480, help="Total run time (s) across all cameras")
     parser.add_argument("--interval", type=float, default=CAPTURE_INTERVAL)
     args = parser.parse_args()
 
@@ -145,26 +145,32 @@ def main():
     os.makedirs("logs", exist_ok=True)
     tag = "_".join(map(str, args.cameras))
     power_log = f"logs/tegrastats_cam{tag}_{args.width}x{args.height}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-    tegrastats = subprocess.Popen(["tegrastats", "--interval", "1000"],
-                                  stdout=open(power_log, "w"),
-                                  stderr=subprocess.STDOUT)
     print(f"Started tegrastats logging → {power_log}")
 
-    procs = []
+    # Each camera gets an equal slice of total time
+    per_cam_duration = args.total_duration / len(args.cameras)
+    print(f"Total {args.total_duration}s → {per_cam_duration:.1f}s per camera")
+    start_time = time.time()
     try:
-        for c in args.cameras:
-            p = Process(target=fullProcess,
-                        args=(c, cam_cfg[c], args.interval, args.width, args.height, args.duration))
-            p.start()
-            procs.append(p)
-        for p in procs:
-            p.join()
+        while time.time() - start_time < per_cam_duration:
+            for cam in args.cameras:
+                print(f"\n=== Starting sequential run for camera {cam} ===")
+                tegrastats = subprocess.Popen(
+                    ["tegrastats", "--interval", "1000"],
+                    stdout=open(power_log, "a"),
+                    stderr=subprocess.STDOUT,
+                )
+                try:
+                    fullProcess(cam, cam_cfg[cam], args.interval, args.width, args.height, per_cam_duration)
+                finally:
+                    tegrastats.terminate()
+                    print(f"Stopped tegrastats logging for camera {cam}")
+                    print("----------------------------------------------------")
+                    time.sleep(5)
     except KeyboardInterrupt:
-        for p in procs:
-            p.terminate()
+        print("Main interrupted. Terminating...")
     finally:
-        tegrastats.terminate()
-        print("Stopped tegrastats logging.")
+        print("All cameras finished.")
 
 
 if __name__ == "__main__":

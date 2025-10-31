@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-DURATION=480        # 6 minutes
-INTERVAL=40         # seconds between captures
-WIDTH=640
-HEIGHT=480
+TOTAL_DURATION=480        # 6 minutes
+INTERVAL=20         # seconds between captures
+WIDTH=1280
+HEIGHT=720
 PYTHON_ENV="/home/is307/miniforge3/envs/gauge_reader_org_clone/bin/python"
 SCRIPT="scheduled_runs.py"
 
@@ -12,7 +12,7 @@ mkdir -p logs stats plots
 
 # === Define test stages ===
 declare -a TESTS=(
-  "0 2 3"
+  "0 2 7"
 )
   # "0 "
   # "0 2 "
@@ -26,7 +26,7 @@ for cams in "${TESTS[@]}"; do
     --cameras $cams \
     --width $WIDTH \
     --height $HEIGHT \
-    --duration $DURATION \
+    --total_duration $TOTAL_DURATION \
     --interval $INTERVAL
 
   echo "✅ Finished run for cameras: $cams"
