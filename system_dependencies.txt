@@ -1,0 +1,12 @@
+# R36 (release), REVISION: 4.0  
+nvidia-l4t-core 36.4.0  
+
+CUDA 11.5.119
+
+cuDNN 9.3.0
+
+TensorRT 10.3.0.30
+
+video4linux2 1.20.3
+
+nvvidconv 1.2.3
