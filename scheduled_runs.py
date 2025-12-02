@@ -75,7 +75,7 @@ def postCapture(name, rgd_img, camera_index, camera_details):
     try:
         print("reading image")
         # data = readImage(name, rgd_img, camera_index, camera_details)
-        data = runModel(name, rgd_img, camera_index, camera_details)
+        data = runModel(name, rgd_img, camera_index, camera_details, debug=False)
         print(f"Data inferred from {camera_index}_{camera_details['camera_name']}: {data}")
         if data is None:
             print("No data returned from image processing")
